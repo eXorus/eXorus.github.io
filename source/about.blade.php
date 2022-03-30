@@ -72,4 +72,33 @@ description: A little bit about the site
         For my 4th year technical internship, I learned how to set up an online store with OSCommerce (now well dethroned by Prestashop), it was http://vinsmoinschers.com which still exists but has since been bought. We are in <strong>2006</strong>.
     </p>
 
+    <hr class="clear-left">
+    <p class="mb-6 mx-8">
+        Since leaving engineering school I have moved into the world of Software Quality, which allows me to work in the IT world while taking advantage of my evenings, weekends and vacations to code and manage my server.
+    </p>
+
+    <hr class="clear-left">
+    <img src="/assets/img/piczle.png"
+        alt=""
+        class="float-left h-32">
+
+    <p class="mb-6 mx-8">
+        I participated in HackHours #2 to develop as a team and in less than 28 hours Piczle.me: creation of community images in the form of a patchwork. We came 2nd in the competition against 16 teams. We are in <strong>2014</strong>.
+    </p>
+
+    <hr class="clear-left">
+    <img src="/assets/img/mailcare.png"
+        alt=""
+        class="float-left h-32">
+
+    <p class="mb-6 mx-8">
+        Since 2013 I have been building my own temporary email service and I have become the main maintainer of the php-mime-mail-parser lib. As an expert in the tests I used this platform in my different companies for manual and automatic tests. This is why in <strong>2018</strong> I launched my SaaS MailCare offer, of which I am the founder.
+    </p>
+
+    <hr class="clear-left">
+    <p class="mb-6 mx-8">
+        I now work as an auto-entrepreneur on several websites (e-commerce, real estate agency, association, bed and breakfast, etc.) but above all for my personal pleasure.
+    </p>
+
+
 @endsection
