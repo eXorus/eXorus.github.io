@@ -1,13 +1,10 @@
 ---
-id: 152
-title: 'Administrer un serveur dédié – part 7 : Backup MySQL'
-date: '2014-04-03T22:06:06+01:00'
-author: Vincent
-layout: post
-guid: 'http://vincent.dauce.fr/?p=152'
-permalink: /administrer-un-serveur-dedie-part-7-backup-mysql/
-categories:
-    - admin
+extends: _layouts.post
+section: content
+title: 'Administrer un serveur dédié - part 7 : Backup MySQL'
+date: 2014-04-03
+description: 
+categories: [admin]
 ---
 
 Sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, …

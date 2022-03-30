@@ -1,13 +1,10 @@
 ---
-id: 34
-title: 'Mon premier projet Open Source php-mime-mail-parser'
-date: '2014-03-08T17:40:59+01:00'
-author: Vincent
-layout: post
-guid: 'http://vincent.dauce.fr/?p=34'
-permalink: /vpmel-mon-premier-projet-open-source/
-categories:
-    - php
+extends: _layouts.post
+section: content
+title: Mon premier projet Open Source php-mime-mail-parser
+date: 2014-03-08
+description: 
+categories: [php]
 ---
 
 Contrairement aux autres articles celui ci sera moins technique, je vais vous raconter une histoire comment j’ai créé mon premier projet Open Source [php-mime-mail-parser](https://github.com/eXorus/php-mime-mail-parser).

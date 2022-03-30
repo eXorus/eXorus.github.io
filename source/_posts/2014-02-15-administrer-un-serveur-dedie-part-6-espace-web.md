@@ -1,13 +1,10 @@
 ---
-id: 91
-title: 'Administrer un serveur dédié – part 6 : Espace Web'
-date: '2014-02-15T18:59:35+01:00'
-author: Vincent
-layout: post
-guid: 'http://vincent.dauce.fr/?p=91'
-permalink: /administrer-un-serveur-dedie-part-6-espace-web/
-categories:
-    - admin
+extends: _layouts.post
+section: content
+title: 'Administrer un serveur dédié - part 6 : Espace Web'
+date: 2014-02-15
+description: 
+categories: [admin]
 ---
 
 Vous souhaitez installer Prestashop, WordPress ou créer votre site de A à Z ? et bien il vous faut un espace web que l’on va créer maintenant.

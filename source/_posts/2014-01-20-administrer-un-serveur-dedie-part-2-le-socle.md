@@ -1,14 +1,12 @@
 ---
-id: 10
-title: 'Administrer un serveur dédié – part 2 : Le socle'
-date: '2014-01-20T18:18:02+01:00'
-author: Vincent
-layout: post
-guid: 'http://vincent.dauce.fr/?p=10'
-permalink: /administrer-un-serveur-dedie-part-2-le-socle/
-categories:
-    - admin
+extends: _layouts.post
+section: content
+title: 'Administrer un serveur dédié - part 2 : Le socle'
+date: 2014-01-20
+description: 
+categories: [admin]
 ---
+
 
 Après cette petite introduction, nous allons réellement commencer l’installation.
 

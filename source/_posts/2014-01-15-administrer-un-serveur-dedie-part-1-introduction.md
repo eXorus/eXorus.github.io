@@ -1,13 +1,10 @@
 ---
-id: 5
-title: 'Administrer un serveur dédié &#8211; part 1 : Introduction'
-date: '2014-01-15T00:07:46+01:00'
-author: Vincent
-layout: post
-guid: 'http://vincent.dauce.fr/?p=5'
-permalink: /administrer-un-serveur-dedie-part-1-introduction/
-categories:
-    - admin
+extends: _layouts.post
+section: content
+title: 'Administrer un serveur dédié - part 1 : Introduction'
+date: 2014-01-15
+description: 
+categories: [admin]
 ---
 
 L’idée de départ pour ce blog était de partager mon expérience pour administrer un serveur dédié, donc commençons par là.

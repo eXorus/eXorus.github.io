@@ -1,13 +1,10 @@
 ---
-id: 36
-title: 'Php Sécurité – Découverte des Injections SQL et comment s’en protéger'
-date: '2014-03-03T12:34:16+01:00'
-author: Vincent
-layout: post
-guid: 'http://vincent.dauce.fr/?p=36'
-permalink: /php-securite-injection-sql/
-categories:
-    - php
+extends: _layouts.post
+section: content
+title: Php Sécurité – Découverte des Injections SQL et comment s’en protéger
+date: 2014-03-03
+description: 
+categories: [php]
 ---
 
 Nous allons étudier dans cet article les [injections SQL](http://fr.wikipedia.org/wiki/Injection_SQL) et apprendre à s’en protéger.

@@ -1,13 +1,10 @@
 ---
-id: 72
-title: 'Administrer un serveur dédié – part 4 : Premier container'
-date: '2014-02-01T21:55:00+01:00'
-author: Vincent
-layout: post
-guid: 'http://vincent.dauce.fr/?p=72'
-permalink: /administrer-un-serveur-dedie-part-4-premier-container/
-categories:
-    - admin
+extends: _layouts.post
+section: content
+title: 'Administrer un serveur dédié - part 4 : Premier container'
+date: 2014-02-01
+description: 
+categories: [admin]
 ---
 
 Après déjà 3 articles, nous arrivons enfin à notre premier container qui va nous permettre enfin d’héberger nos sites et rendre service, car c’est bien là le but d’un serveur rendre services aux autres.

@@ -1,13 +1,10 @@
 ---
-id: 50
-title: 'Administrer un serveur dédié – part 3 : Virtualisation'
-date: '2014-01-25T15:07:43+01:00'
-author: Vincent
-layout: post
-guid: 'http://vincent.dauce.fr/?p=50'
-permalink: /administrer-un-serveur-dedie-part-3-virtualisation/
-categories:
-    - admin
+extends: _layouts.post
+section: content
+title: 'Administrer un serveur dédié - part 3 : Virtualisation'
+date: 2014-01-25
+description: 
+categories: [admin]
 ---
 
 On va passer à la virtualisation, c’est à la mode et c’est super efficace. L’objectif est d’avoir avec un serveur plusieurs serveurs.

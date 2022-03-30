@@ -1,13 +1,10 @@
 ---
-id: 85
-title: 'Administrer un serveur dédié – part 5 : Serveur Web'
-date: '2014-02-10T16:49:25+01:00'
-author: Vincent
-layout: post
-guid: 'http://vincent.dauce.fr/?p=85'
-permalink: /administrer-un-serveur-dedie-part-5-serveur-web/
-categories:
-    - admin
+extends: _layouts.post
+section: content
+title: 'Administrer un serveur dédié - part 5 : Serveur Web'
+date: 2014-02-10
+description: 
+categories: [admin]
 ---
 
 Dans cet article nous allons voir comment déployer un serveur web, pour cela nous avons besoin de plusieurs briques :

@@ -1,13 +1,10 @@
 ---
-id: 38
-title: 'Php Sécurité &#8211; Découverte de la faille XSS et comment s&rsquo;en protéger'
-date: '2014-03-08T12:35:30+01:00'
-author: Vincent
-layout: post
-guid: 'http://vincent.dauce.fr/?p=38'
-permalink: /php-securite-faille-xss/
-categories:
-    - php
+extends: _layouts.post
+section: content
+title: Php Sécurité – Découverte de la faille XSS et comment s'en protéger
+date: 2014-03-08
+description: 
+categories: [php]
 ---
 
 Nous allons étudier dans cet article la faille [Cross-Site Scripting](http://fr.wikipedia.org/wiki/Cross-site_scripting) (XSS) et apprendre à s’en protéger.
