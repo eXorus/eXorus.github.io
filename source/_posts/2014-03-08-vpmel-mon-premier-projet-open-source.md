@@ -2,9 +2,10 @@
 extends: _layouts.post
 section: content
 title: Mon premier projet Open Source php-mime-mail-parser
-date: 2014-03-08
 description: 
+date: 2014-03-08
 categories: [php]
+featured: true
 ---
 
 Contrairement aux autres articles celui ci sera moins technique, je vais vous raconter une histoire comment j’ai créé mon premier projet Open Source [php-mime-mail-parser](https://github.com/eXorus/php-mime-mail-parser).
@@ -66,15 +67,12 @@ A ce jour il y a plus de 20 tests vérifiant 53 assertions, j’en suis fier. Me
 
 La première fois que l’on reçoit une contribution sur un projet Open Source est indescriptible, c’était il y a 5 mois avec le message suivant :
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-markup code-embed-pre" data-line-offset="0" data-start="1">```markup
-Over the last few months, I've tested around 10 PHP email parsing solutions. eXorus, you've nailed it! My assessment is that your modifications to MimeMailParser.class.php have made it the most effective php email parser around in terms of performance, foreign character encoding, attachment handling, and ease of use (once MailParse is installed).
+> Over the last few months, I've tested around 10 PHP email parsing solutions. eXorus, you've nailed it! My assessment is that your modifications to MimeMailParser.class.php have made it the most effective php email parser around in terms of performance, foreign character encoding, attachment handling, and ease of use (once MailParse is installed).
 
-I've reposted your code with nothing but minor formatting and syntax tweaks. Ignore if you wish :)
-```
-```
+> I've reposted your code with nothing but minor formatting and syntax tweaks. Ignore if you wish :)
 
-<div class="code-embed-infos"> <span class="code-embed-name">Première contribution</span> </div> </div>J’étais heureux et fier que l’on trouve mon projet intéressant. Ça reste un petit projet mais de temps en temps je reçois des modifications à effectuer ou des forks qui se créés à partir de mon code. J’essaye de regarder si il y a des bonnes idées à reprendre on ne sait jamais.
+
+J’étais heureux et fier que l’on trouve mon projet intéressant. Ça reste un petit projet mais de temps en temps je reçois des modifications à effectuer ou des forks qui se créés à partir de mon code. J’essaye de regarder si il y a des bonnes idées à reprendre on ne sait jamais.
 
 ## Distribuer mon package
 

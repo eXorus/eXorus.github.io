@@ -2,8 +2,8 @@
 extends: _layouts.post
 section: content
 title: 'Administrer un serveur dédié - part 1 : Introduction'
+description: Introduction à l'administration d'un serveur dédié
 date: 2014-01-15
-description: 
 categories: [admin]
 ---
 

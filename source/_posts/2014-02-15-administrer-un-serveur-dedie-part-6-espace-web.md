@@ -2,8 +2,8 @@
 extends: _layouts.post
 section: content
 title: 'Administrer un serveur dédié - part 6 : Espace Web'
+description: ajout d'un premier site web
 date: 2014-02-15
-description: 
 categories: [admin]
 ---
 
@@ -34,8 +34,8 @@ Cette procédure est à répéter autant de fois que vous voulez, par exemple po
 
 Pour créer un hébergement comme j’utilise le mode userdir, on commence par ajouter un compte « blogtuto » dans le groupe www-data (group d’Apache)
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Ajouter un compte:
+```bash
 useradd -g www-data -m blogtuto
 passwd blogtuto
 chage -M 100 blogtuto
@@ -44,9 +44,8 @@ chmod -R 750 /home/blogtuto/
 chown -R blogtuto:www-data /home/blogtuto/www/
 chmod -R 750 /home/blogtuto/www/
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Ajouter un compte</span> </div> </div>Avec ces quelques commande plein de choses sont faites :
+Avec ces quelques commande plein de choses sont faites :
 
 - Création d’un compte
 - Modification du mot de passe (pour en mettre un compliqué : 50 caractères avec majuscules, minuscules, chiffres et caractères spéciaux)
@@ -56,64 +55,59 @@ chmod -R 750 /home/blogtuto/www/
 - Création d’une page web de bienvenue : index.html dans le dossier www
 - Mise à jour des droits pour autoriser Apache à servir les pages et le compte blogtuto à les modifier via le SFTP.
 
-On peut déjà se connecter sur le SFTP (sftp://CT101\_IP\_PUBLIC:SSH\_PORT) et modifier la page index.html ou créer des nouveaux fichiers dans le dossier www mais il n’est toujours pas possible de voir la page index.html car nous ne l’avons pas autorisé.
+On peut déjà se connecter sur le SFTP (sftp://CT101_IP_PUBLIC:SSH_PORT) et modifier la page index.html ou créer des nouveaux fichiers dans le dossier www mais il n’est toujours pas possible de voir la page index.html car nous ne l’avons pas autorisé.
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+vi /etc/apache2/apache2.conf:
+```bash
 UserDir enabled blogtuto
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">vi /etc/apache2/apache2.conf </span> </div> </div>La ligne est à rajouter juste après « UserDir /home/\*/www », un espace doit séparer chaque compte donc à la fin on peut avoir des choses comme ca :
+La ligne est à rajouter juste après « UserDir /home/*/www », un espace doit séparer chaque compte donc à la fin on peut avoir des choses comme ca :
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Configuration UserDir:
+```bash
 # Configuration du module UserDir
 UserDir disabled
 UserDir /home/*/www
 UserDir enabled blogtuto blogtuto2 blogtuto3
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Configuration UserDir</span> </div> </div>Et recharger la configuration apache2
+Et recharger la configuration apache2
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Recharger apache:
+```bash
 service apache2 reload
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Recharger apache</span> </div> </div>Saisir http://CT101\_IP\_PUBLIC/~blogtuto dans votre navigateur préféré et vous devriez voir la page index.html.
+Saisir http://CT101_IP_PUBLIC/~blogtuto dans votre navigateur préféré et vous devriez voir la page index.html.
 
 ## Accès MySQL
 
 On se connecte avec le compte root et le mot de passe que vous avez mis dans l’article précédent :
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Création d'un accès MySQL:
+```bash
 mysql -h localhost -u root -p
 mysql > create database blogtutoDB;
 mysql > grant all privileges on blogtutoDB.* to blogtuto@localhost identified by 'mypasswd';
 mysql > flush privileges;
 mysql > exit;
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Création d'un accès MySQL</span> </div> </div>Avec ces commandes nous avons créé une nouvelle base de données blogtutoDB et avons attribués tous les droits sur cette base uniquement à un nouvel utilisateur blogtuto que nous créons avec le mot de passe passwd.
+Avec ces commandes nous avons créé une nouvelle base de données blogtutoDB et avons attribués tous les droits sur cette base uniquement à un nouvel utilisateur blogtuto que nous créons avec le mot de passe passwd.
 
 Si vous avez déjà mis en place les sauvegardes MySQL avec le tuto [Administrer un serveur dédié – part 7 : Backup MySQL](http://vincent.dauce.fr/administrer-un-serveur-dedie-part-7-backup-mysql/ "Administrer un serveur dédié – part 7 : Backup MySQL"), pensez à rajouter les droits pour la sauvegarde automatique entre le grant initial et le flush privileges :
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-sql code-embed-pre" data-line-offset="0" data-start="1">```sql
+Ajouter la sauvegarde de la base en automatique:
+```sql
 GRANT SELECT , INSERT , LOCK TABLES ON `blogtutoDB` . * TO 'mysql-backup-manager'@'localhost';
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Ajouter la sauvegarde de la base en automatique</span> </div> </div>## Configurer le container avec un nom de domaine
+## Configurer le container avec un nom de domaine
 
 Une bonne pratique à avoir est de rajouter le nom de domaine dans le fichier host du container. Pour cela vous devez juste rajouter « blogtuto.com » sur la première ligne du fichier host après localhost :
 
-<span class="pastacode_message">vi /etc/hosts</span>  
+vi /etc/hosts
 Vous pouvez rajouter autant de domaines que vous le souhaitez séparé par des espaces.
 
 ## Configurer le virtual host Apache avec un nom de domaine
@@ -122,8 +116,8 @@ La méthode de userdir est sympathique quand on a pas nom de domaine mais quand 
 
 Il faut donc créer un virtual host (nouveau fichier)
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+vi /etc/apache2/sites-available/01-blogtuto.com:
+```bash
 <VirtualHost *:80>
         ServerAdmin blogtuto@localhost
         ServerName www.blogtuto.com
@@ -145,9 +139,8 @@ Il faut donc créer un virtual host (nouveau fichier)
 
 </VirtualHost>
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">vi /etc/apache2/sites-available/01-blogtuto.com</span> </div> </div>Et pour le coup il y a du travail car beaucoup de configuration à faire et à expliquer.
+Et pour le coup il y a du travail car beaucoup de configuration à faire et à expliquer.
 
 Déjà le nom du fichier « 01-blogtuto.com » c’est une convention personnel :
 
@@ -156,7 +149,7 @@ Déjà le nom du fichier « 01-blogtuto.com » c’est une convention personnel 
 
 Pour le fichier de conf :
 
-- VirtualHost \*:80 : On peut avoir plusieurs balise dans un fichier mais je préfère en avoir qu’un. Ici on dit que ce virtual host écoutera sur le port 80 (http et donc pas https) sur n’importe qu’elle IP comme le container en a qu’un çà sera toujours la même mais si vous avez plusieurs IP sur le même container il faut préciser
+- VirtualHost *:80 : On peut avoir plusieurs balise dans un fichier mais je préfère en avoir qu’un. Ici on dit que ce virtual host écoutera sur le port 80 (http et donc pas https) sur n’importe qu’elle IP comme le container en a qu’un çà sera toujours la même mais si vous avez plusieurs IP sur le même container il faut préciser
 - [ServerAdmin](http://httpd.apache.org/docs/2.2/fr/mod/core.html#ServerAdmin) : c’est l’adresse mail de contact qui recevra les messages d’erreurs donc mon utilisateur blogtuto@localhost
 - [ServerName](http://httpd.apache.org/docs/2.2/fr/mod/core.html#ServerName) : La directive la plus importante qui va permettre d’identifier le virtual host à utiliser donc l’adresse la plus importante soit www.blogtuto.com ou blogtuto.com en fonction
 - [ServerAlias](http://httpd.apache.org/docs/2.2/fr/mod/core.html#ServerAlias) : La directive alternative donc si vous avez mis www.blogtuto.com mettez blogtuto.com et inversement
@@ -166,14 +159,13 @@ Pour le fichier de conf :
 
 Pour prendre en compte nos modifications il faut activer le nouveau virtual host et recharger Apache :
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Activer un site et recharger Apache:
+```bash
 a2ensite 01-blogtuto.com
 service apache2 reload
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Activer un site et recharger Apache</span> </div> </div>## Encore plus loin avec Directory
+## Encore plus loin avec Directory
 
 ### AllowOverride
 
@@ -183,8 +175,8 @@ Donc pour résumer je n’utilise pas de fichiers htaccess. Toutes les directive
 
 Pour WordPress :
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Virtual Host Apache pour WordPress:
+```bash
 <Directory /home/blogtuto/www>
   Options +SymLinksIfOwnerMatch -FollowSymLinks -ExecCGI -Includes -IncludesNOEXEC -Indexes -MultiViews
   AllowOverride None
@@ -199,16 +191,15 @@ Pour WordPress :
   # END WordPress
 </Directory>
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Virtual Host Apache pour WordPress</span> </div> </div>###  Forcer le WWW ou non
+###  Forcer le WWW ou non
 
 Il ne faut jamais que vos sites soient accessibles avec 2 URL différentes sinon les statistiques sont faussés. Donc il faut choisir entre www.blogtuto.com ou blogtuto.com.
 
 Pour rediriger toutes les requêtes blogtuto.com vers www.blogtuto.com :
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Forcer WWW:
+```bash
 <Directory /home/blogtuto/www>
 	Options +SymLinksIfOwnerMatch -FollowSymLinks -ExecCGI -Includes -IncludesNOEXEC -Indexes -MultiViews
 	AllowOverride None
@@ -221,12 +212,11 @@ Pour rediriger toutes les requêtes blogtuto.com vers www.blogtuto.com :
 	# END Force WWW
 </Directory>
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Forcer WWW</span> </div> </div>Et inversement si vous voulez que toutes les requêtes www.blogtuto.com redirigent vers blogtuto.com :
+Et inversement si vous voulez que toutes les requêtes www.blogtuto.com redirigent vers blogtuto.com :
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Force NO WWW:
+```bash
 <Directory /home/blogtuto/www>
 	Options +SymLinksIfOwnerMatch -FollowSymLinks -ExecCGI -Includes -IncludesNOEXEC -Indexes -MultiViews
 	AllowOverride None
@@ -239,6 +229,3 @@ Pour rediriger toutes les requêtes blogtuto.com vers www.blogtuto.com :
 	# END Force NO WWW
 </Directory>
 ```
-```
-
-<div class="code-embed-infos"> <span class="code-embed-name">Force NO WWW</span> </div> </div>

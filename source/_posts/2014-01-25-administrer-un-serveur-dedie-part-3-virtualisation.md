@@ -2,8 +2,8 @@
 extends: _layouts.post
 section: content
 title: 'Administrer un serveur dédié - part 3 : Virtualisation'
+description: mise en place de la virtualisation avec LXC et configuration du réseau
 date: 2014-01-25
-description: 
 categories: [admin]
 ---
 
@@ -37,39 +37,36 @@ Même chose pour CT102, CT103, ….
 
 C’est très facile il suffit de lancer la commande et on demandera uniquement de valider le répertoire. On va laisser celui par défaut c’est à dire /var/lib/lxc
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Installer LXC:
+```bash
 aptitude install lxc bridge-utils libvirt-bin debootstrap
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Installer LXC</span> </div> </div>LXC a besoin de [cgroups](http://fr.wikipedia.org/wiki/Cgroups) pour limiter les ressources du serveur sur chaque container donc on va l’activer :
+LXC a besoin de [cgroups](http://fr.wikipedia.org/wiki/Cgroups) pour limiter les ressources du serveur sur chaque container donc on va l’activer :
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Activer cgroups:
+```bash
 echo "cgroup /sys/fs/cgroup cgroup defaults 0 0" >> /etc/fstab
 mount /sys/fs/cgroup
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Activer cgroups</span> </div> </div>La première ligne permet de l’activer par défaut au démarrage du serveur et la seconde permet de l’activer maintenant.
+La première ligne permet de l’activer par défaut au démarrage du serveur et la seconde permet de l’activer maintenant.
 
 Enfin il faut vérifier que l’installation de LXC est bonne et vérifier le résultat de la commande checkconfig
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Vérifier l'installation de LXC:
+```bash
 lxc-checkconfig
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Vérifier l'installation de LXC</span> </div> </div>## Modification du réseau
+## Modification du réseau
 
 Surement la partie la plus dure car il y a plusieurs méthodes possible.
 
 Après l’installation d’une Debian vous devriez avoir le réseau configuré de cette manière :
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Réseau par défaut:
+```bash
 # The loopback network interface
 auto lo
 iface lo inet loopback
@@ -78,12 +75,11 @@ iface lo inet loopback
 allow-hotplug eth0
 iface eth0 inet dhcp
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Réseau par défaut</span> </div> </div>A modifier par :
+A modifier par :
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+vi /etc/network/interfaces:
+```bash
 # The loopback network interface
 auto lo
 iface lo inet loopback
@@ -108,9 +104,8 @@ iface br0 inet static
        bridge_fd 0
        bridge_maxwait 5	
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">vi /etc/network/interfaces</span> </div> </div>Une petite explication s’impose avant on avait un réseau avec 2 interfaces :
+Une petite explication s’impose avant on avait un réseau avec 2 interfaces :
 
 - La boucle local pour que le serveur se parle à lui même (localhost)
 - L’interface principal avec notre IP publique que nous récupérons directement des serveurs DHCP d’Online.
@@ -123,7 +118,7 @@ Nos modifications sont les suivantes :
     - network : La même que ci-dessus avec un 0 à la fin
     - broadcast : La même que ci-dessus avec un 255 à la fin cette fois
     - gateway : La même que ci-dessus avec un 1 à la fin cette fois
-    - ip\_forward : permet d’activer l’IP Forwarding ca va nous servir pour nos containers
+    - ip_forward : permet d’activer l’IP Forwarding ca va nous servir pour nos containers
 - On rajoute une interface bridge, en gros un switch sur lequel on va connecter les autres containers. 
     - address : c’est l’IP privée de notre host
 
@@ -139,38 +134,31 @@ Merci à lui.
 
 ## Quelques commandes avec LXC
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Lister les containers:
+```bash
 lxc-list
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Lister les containers</span> </div> </div><div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Démarrer le container CT101:
+```bash
 lxc-start -n CT101 -d
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Démarrer le container CT101</span> </div> </div><div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Se connecter sur le container CT101:
+```bash
 lxc-console -n CT101
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Se connecter sur le container CT101</span> </div> </div>Il y a visiblement plusieurs méthodes (« lxc-halt -n CT101 » ou « lxc-stop -n CT101 ») pour arrêter un container mais elles ne sont pas dès plus douces. La solution la plus propre consiste à se connecter dessus à l’arrêter puis à dire à LXC de la stopper.
+Il y a visiblement plusieurs méthodes (« lxc-halt -n CT101 » ou « lxc-stop -n CT101 ») pour arrêter un container mais elles ne sont pas dès plus douces. La solution la plus propre consiste à se connecter dessus à l’arrêter puis à dire à LXC de la stopper.
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Arrêter le container CT101:
+```bash
 #HOST> lxc-console -n CT101
 #CT101> init 0
 #HOST> lxc-stop -n CT101
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Arrêter le container CT101</span> </div> </div><div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Supprimer le container CT101:
+```bash
 lxc-destroy -n CT101
 ```
-```
-
-<div class="code-embed-infos"> <span class="code-embed-name">Supprimer le container CT101</span> </div> </div>

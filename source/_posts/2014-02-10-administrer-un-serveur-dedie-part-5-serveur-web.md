@@ -2,8 +2,8 @@
 extends: _layouts.post
 section: content
 title: 'Administrer un serveur dédié - part 5 : Serveur Web'
+description: gestion d'un hébergement web avec apache, mysql, php.
 date: 2014-02-10
-description: 
 categories: [admin]
 ---
 
@@ -20,13 +20,12 @@ Je vous conseil de rien n’installer sur le host pour le laisser le plus propre
 
 ## Serveur Web – Apache
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Installer Apache:
+```bash
 aptitude install apache2
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Installer Apache</span> </div> </div>Il va installer plusieurs packages car [apache2 est un metapaquet](https://packages.debian.org/wheezy/apache2).
+Il va installer plusieurs packages car [apache2 est un metapaquet](https://packages.debian.org/wheezy/apache2).
 
 A la fin de l’installation le serveur web est lancé et fonctionnel. On peut le voir rapidement en saisissant dans votre navigateur l’adresse IP Failover de votre container qui affichera une page web. Avant on avait connexion refusée.
 
@@ -34,88 +33,80 @@ Il y a aussi après le lancement un petit warning que nous allons corriger : « 
 
 C’est très simple pour ne plus avoir les erreurs vous devez modifier le fichier suivant et ajouter cette ligne à la fin du fichier :
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+vi /etc/apache2/apache2.conf:
+```bash
 ServerName localhost
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">vi /etc/apache2/apache2.conf</span> </div> </div>Vérifions aussi quelques configurations d’Apache pour voir si tout est en ordre :
+Vérifions aussi quelques configurations d’Apache pour voir si tout est en ordre :
 
 Vérifier que la configuration d’Apache (normalement c’est celle par défaut) écoute bien sur le port 80. Et aussi sur le port 443 un peu plus bas dans le cas ou on voudrait déployer du SSL ce que nous ferons bientôt pour notre cloud.
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+vi /etc/apache2/ports.conf:
+```bash
 NameVirtualHost *:80
 Listen 80
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">vi /etc/apache2/ports.conf</span> </div> </div>Modifier en décommentant la ligne (supprimer le #) pour passer Apache2 en UTF-8 c’est la norme sur le web depuis quelques années maintenant et vous ne rencontrerez aucun problème en encodant tous les fichiers en UTF-8.
+Modifier en décommentant la ligne (supprimer le #) pour passer Apache2 en UTF-8 c’est la norme sur le web depuis quelques années maintenant et vous ne rencontrerez aucun problème en encodant tous les fichiers en UTF-8.
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+vi /etc/apache2/conf.d/charset:
+```bash
 AddDefaultCharset UTF-8
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">vi /etc/apache2/conf.d/charset</span> </div> </div>Pour personnaliser un peu apache je vous conseil 2 modules qui sont presque indispensable pour moi :
+Pour personnaliser un peu apache je vous conseil 2 modules qui sont presque indispensable pour moi :
 
 - [rewrite](http://httpd.apache.org/docs/2.2/mod/mod_rewrite.html) : permet la réécriture d’URL, tous les sites l’utilisent de nos jours (au lieu d’avoir http://vincent.dauce.fr/index.php?article=1 nous avons http://vincent.dauce.fr/mon-premier-article)
 - [userdir](http://httpd.apache.org/docs/current/mod/mod_userdir.html) : celui là est moins évident ça permet de créer un hébergement web par utilisateur. Pour chaque site hébergé sur ce serveur je vais créer un compte avec un mot de passe pour lui donner accès aux fichiers et avoir un espace web. Pour sécuriser le tout c’est moi qui l’activerait ou non par compte donc par exemple compte root n’a pas d’espace web 🙂
 
 Pour activer les 2 modules ci-dessus nous utilisons :
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Activer les modules principaux sur Apache:
+```bash
 a2enmod rewrite
 a2enmod userdir
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Activer les modules principaux sur Apache</span> </div> </div>Comme vu plus haut nous allons sécuriser le module userdir avec la configuration suivante (ajouter les lignes à la fin du fichier après ServerName) :
+Comme vu plus haut nous allons sécuriser le module userdir avec la configuration suivante (ajouter les lignes à la fin du fichier après ServerName) :
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+vi /etc/apache2/apache2.conf:
+```bash
 # Configuration du module UserDir
 UserDir disabled
 UserDir /home/*/www
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">vi /etc/apache2/apache2.conf </span> </div> </div>Le module userdir est ainsi désactivé et sera activé au cas par cas selon nos besoins. Et nous définissons que les pages web seront dans le répertoire /home/\*/www avec \* le login du compte.
+Le module userdir est ainsi désactivé et sera activé au cas par cas selon nos besoins. Et nous définissons que les pages web seront dans le répertoire /home/*/www avec * le login du compte.
 
-Pour vous donner une idée, si je veux héberger le site « toto.com » je vais créer un compte toto qui aura donc un répertoire personnel dans /home/toto. Si j’active pour ce compte l’espace web il pourra déposer des fichiers dans /home/toto/www et consultable via le lien CT101\_IP\_PUBLIC/~toto.
+Pour vous donner une idée, si je veux héberger le site « toto.com » je vais créer un compte toto qui aura donc un répertoire personnel dans /home/toto. Si j’active pour ce compte l’espace web il pourra déposer des fichiers dans /home/toto/www et consultable via le lien CT101_IP_PUBLIC/~toto.
 
 Justement pour éviter d’avoir à créer à chaque fois le dossier www nous allons automatiser la création et créer un dossier logs pour stocker les fichier log d’Apache par compte.
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Automatiser la création du dossier www:
+```bash
 mkdir /etc/skel/www
 mkdir /etc/skel/logs
 echo " <strong>Nouvel espace web</strong> " > /etc/skel/www/index.html
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Automatiser la création du dossier www</span> </div> </div>Puis recharger la configuration et admirer que vous n’avez plus le message d’erreur :
+Puis recharger la configuration et admirer que vous n’avez plus le message d’erreur :
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Recharger apache2:
+```bash
 service apache2 reload
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Recharger apache2</span> </div> </div>## Serveur SQL – MySQL
+## Serveur SQL – MySQL
 
 Pour installer MySQL c’est très simple voir trop simple 🙂
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Installer MySQL:
+```bash
 aptitude install mysql-server
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Installer MySQL</span> </div> </div>On est encore dans le cas d’un metapaquet, on valide et c’est tout.
+On est encore dans le cas d’un metapaquet, on valide et c’est tout.
 
 Je vous conseil de choisir un mot de passe complexe pour le root de MySQL, moi j’utilise 50 caractères avec majuscules, minuscules et chiffres (Pas de caractères spéciaux car j’ai souvent eu des problèmes après pour me connecter avec).
 
@@ -129,15 +120,14 @@ Voilà le mien : a4HBSwpwdlF3LafNsPswKM6uZQWGIqrjnUGXkNcoYX3XGE5lZV
 
 Pour PHP aussi pas beaucoup de chose à faire (PHP 5.4) :
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Installer PHP:
+```bash
 aptitude install php5
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Installer PHP</span> </div> </div>Après comme pour Apache il y a des modules plus ou moins importants, voici les principaux :
+Après comme pour Apache il y a des modules plus ou moins importants, voici les principaux :
 
-- [php5-mysql](https://packages.debian.org/wheezy/php5-mysql) : plutôt indispensable celui là sinon comment vous connecter à MySQL que vous venez d’installer ? permet d’activer les fonctions mysql\_\* (ne plus les utiliser svp c’est trop horrible et obsolète depuis la version 5.5 de PHP), mysqli\_\* (c’est mieux mais bon) et enfin PDO (ça c’est la classe)
+- [php5-mysql](https://packages.debian.org/wheezy/php5-mysql) : plutôt indispensable celui là sinon comment vous connecter à MySQL que vous venez d’installer ? permet d’activer les fonctions mysql_* (ne plus les utiliser svp c’est trop horrible et obsolète depuis la version 5.5 de PHP), mysqli_* (c’est mieux mais bon) et enfin PDO (ça c’est la classe)
 - [php5-curl](https://packages.debian.org/wheezy/php5-curl) : pour récupérer des fichiers via HTTP ou FTP
 - [php5-gd](https://packages.debian.org/wheezy/php5-gd) : pour traiter des images (resize, traitements, …)
 - [php5-mcrypt](https://packages.debian.org/wheezy/php5-mcrypt) : pour crypter des données sensibles
@@ -149,13 +139,12 @@ aptitude install php5
 
 Pour les installer tous il suffit de lancer :
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Installer les modules PHP:
+```bash
 aptitude install php5-mysql php5-gd php5-mcrypt php5-curl libssh2-php
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Installer les modules PHP</span> </div> </div>Juste après ca vous n’avez rien à faire tout est déjà fonctionnel.
+Juste après ca vous n’avez rien à faire tout est déjà fonctionnel.
 
 ## Serveur Fichier – SFTP
 
@@ -174,8 +163,8 @@ Et rajouter quelques lignes après « UserPAM yes ». Pour autoriser le groupe w
 - AllowTcpForwarding : interdire aussi les tunnels SSH
 - ForceCommand : pour forcer l’utilisation d’un faux shell et interdire donc un accès SSH
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+vi /etc/ssh/sshd_config:
+```bash
 Subsystem sftp internal-sftp
 
 # Set this to 'yes' to enable PAM authentication, account processing,
@@ -195,25 +184,20 @@ UsePAM yes
 	        AllowTcpForwarding no
 	        ForceCommand internal-sftp
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">vi /etc/ssh/sshd\_config </span> </div> </div>Reste à recharger la configuration de notre service :
+Reste à recharger la configuration de notre service :
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Recharger SSH:
+```bash
 service ssh reload
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Recharger SSH</span> </div> </div>Et voilà nous avons un SFTP sécurisé accessible uniquement aux utilisateurs appartenant au groupe www-data. Pour rappel le fichier de conf a déjà été modifié pour interdire au root de pouvoir se connecter et nous avons déjà changé le port par défaut qui était à 22 pour plus de sécurité.
+Et voilà nous avons un SFTP sécurisé accessible uniquement aux utilisateurs appartenant au groupe www-data. Pour rappel le fichier de conf a déjà été modifié pour interdire au root de pouvoir se connecter et nous avons déjà changé le port par défaut qui était à 22 pour plus de sécurité.
 
 Reste à rajouter des droits car sinon le SFTP interdira de se connecter.
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Droits pour SFTP:
+```bash
 chown -R root:www-data /home/
 chmod -R 750 /home/
 ```
-```
-
-<div class="code-embed-infos"> <span class="code-embed-name">Droits pour SFTP</span> </div> </div>

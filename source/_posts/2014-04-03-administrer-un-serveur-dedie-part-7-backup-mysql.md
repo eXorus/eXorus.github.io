@@ -2,8 +2,8 @@
 extends: _layouts.post
 section: content
 title: 'Administrer un serveur dédié - part 7 : Backup MySQL'
-date: 2014-04-03
 description: 
+date: 2014-04-03
 categories: [admin]
 ---
 
@@ -25,20 +25,19 @@ Nous allons mettre en place dans **chaque** **container** (ayant une base de don
 
 ## Création du compte système
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Création et initilisation du mdp:
+```bash
 useradd -g www-data -m MySQLBackupManager
 passwd MySQLBackupManager
 chage -M 100 
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Création et initilisation du mdp</span> </div> </div>Le compte sera MySQLBackupManager avec un mot de passe compliquée comme d’habitude 🙂
+Le compte sera MySQLBackupManager avec un mot de passe compliquée comme d’habitude 🙂
 
 On va nettoyer le répertoire personnelle du compte pour ne laisser que le script nécessaire et les sauvegardes locales
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Nettoyer le répertoire personnel:
+```bash
 su - MySQLBackupManager
 rm -rf /home/MySQLBackupManager
 mkdir scripts
@@ -47,29 +46,26 @@ mkdir logs
 mkdir backups_daily
 mkdir backups_weekly
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Nettoyer le répertoire personnel</span> </div> </div>Voilà tout est en place il reste le fameux scripts mais nous allons d’abord récupérer les informations nécessaires avant.
+Voilà tout est en place il reste le fameux scripts mais nous allons d’abord récupérer les informations nécessaires avant.
 
 Tout le reste se passe avec le compte MySQLBackupManager
 
 ## Création du compte MySQL
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Se connecter en root à MySQL:
+```bash
 mysql -h localhost -u root -p
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Se connecter en root à MySQL</span> </div> </div><div class="code-embed-wrapper"> ```
-<pre class="language-sql code-embed-pre" data-line-offset="0" data-start="1">```sql
+Création du compte:
+```sql
 CREATE USER 'mysql-backup-manager'@'localhost' IDENTIFIED BY 'MON_PASSWORD';
 FLUSH PRIVILEGES;
 EXIT;
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Création du compte</span> </div> </div>Remplacer par le mot de passe que vous souhaitez.
+Remplacer par le mot de passe que vous souhaitez.
 
 ## Récupérer les informations du serveur distant
 
@@ -87,8 +83,8 @@ Après l’activation récupérer :
 
 Récupérer le script sur mon github :
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+[MySQLBackupManager.sh](https://github.com/eXorus/eXorus/blob/master/MySQLBackupManager/MySQLBackupManager.sh "Afficher MySQLBackupManager.sh") [affichage brut](https://raw.github.com/eXorus/eXorus/master/MySQLBackupManager/MySQLBackupManager.sh "Back to MySQLBackupManager.sh"):
+```bash
 !/bin/bash
 
 #---------------------------------------------------------------#
@@ -221,21 +217,19 @@ if [ -d $TEMPORAIRE ]; then
   rm -Rf $TEMPORAIRE
 fi
 ```
-```
 
-<div class="code-embed-infos"> [MySQLBackupManager.sh](https://github.com/eXorus/eXorus/blob/master/MySQLBackupManager/MySQLBackupManager.sh "Afficher MySQLBackupManager.sh") [affichage brut](https://raw.github.com/eXorus/eXorus/master/MySQLBackupManager/MySQLBackupManager.sh "Back to MySQLBackupManager.sh") </div> </div><div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Récupérer, Déposer et donner les droits:
+```bash
 cd /home/MySQLBackupManager/scripts
 wget https://raw.githubusercontent.com/eXorus/eXorus/master/MySQLBackupManager/MySQLBackupManager.sh
 chmod 700 MySQLBackupManager.sh
 vi MySQLBackupManager.sh
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Récupérer, Déposer et donner les droits</span> </div> </div>On récupère le script on ajout les droits uniquement pour le compte MySQLBackupManager et ensuite on l’édite pour modifier quelques informations :
+On récupère le script on ajout les droits uniquement pour le compte MySQLBackupManager et ensuite on l’édite pour modifier quelques informations :
 
 - user /host / pass : pour se connecter à la machine ici nous sommes en local c’est donc plus simple mais ca fonctionne aussi avec un serveur distant
-- LOGIN\_FTP / PASS\_FTP / HOST\_FTP : pour se connecter au serveur distant (FTP) qui va récupérer les sauvegardes
+- LOGIN_FTP / PASS_FTP / HOST_FTP : pour se connecter au serveur distant (FTP) qui va récupérer les sauvegardes
 
 C’est tout.
 
@@ -246,60 +240,56 @@ Pour que le script fonctionne nous devons installer 2 outils :
 
 Ensuite nous devons configurer le cron (tâche planifiée qui va s’exécuter tous les jours à 4h du matin)
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Crontab:
+```bash
 crontab -e
 		0 4 * * * /home/MySQLBackupManager/scripts/MySQLBackupManager.sh >>/home/MySQLBackupManager/logs/MySQLBackupManager.log
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Crontab</span> </div> </div>Vous pouvez tester le script manuellement la première fois pour vérifier que tout fonctionne correctement :
+Vous pouvez tester le script manuellement la première fois pour vérifier que tout fonctionne correctement :
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Tester le script manuellement:
+```bash
 ./MySQLBackupManager
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Tester le script manuellement</span> </div> </div>Et vérifier avec les logs que tout se passe bien.
+Et vérifier avec les logs que tout se passe bien.
 
 ## Quoi sauvegarder ?
 
 Voilà nos sauvegardes MySQL sont en place reste juste à indiquer les bases à sauvegarder. Pour cela il suffit de donner au compte mysql-backup-manager les droits suffisants.
 
-<div class="code-embed-wrapper"> ```
-<pre class="language-bash code-embed-pre" data-line-offset="0" data-start="1">```bash
+Se connecter en root à MySQL:
+```bash
 mysql -h localhost -u root -p
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Se connecter en root à MySQL</span> </div> </div><div class="code-embed-wrapper"> ```
-<pre class="language-sql code-embed-pre" data-line-offset="0" data-start="1">```sql
+Activer la sauvegarde de la BDD mydatabase:
+```sql
 GRANT SELECT , INSERT , LOCK TABLES ON `mydatabase` . * TO 'mysql-backup-manager'@'localhost';
 FLUSH PRIVILEGES;
 EXIT:
 ```
-```
 
-<div class="code-embed-infos"> <span class="code-embed-name">Activer la sauvegarde de la BDD mydatabase</span> </div> </div>A reproduire sur toutes les bases à sauvegarder. J’ai mis à jour le post concernant la [création d’un espace web](http://vincent.dauce.fr/administrer-un-serveur-dedie-part-6-espace-web/ "Administrer un serveur dédié – part 6 : Espace Web") pour l’activer par défaut.
+A reproduire sur toutes les bases à sauvegarder. J’ai mis à jour le post concernant la [création d’un espace web](http://vincent.dauce.fr/administrer-un-serveur-dedie-part-6-espace-web/ "Administrer un serveur dédié – part 6 : Espace Web") pour l’activer par défaut.
 
 ## Sauvegarde sur le FTP
 
 Sur le FTP Online vous retrouverez la structure suivante :
 
-- \[CT101\] 
-    - backups\_daily 
-        - CT101\_BACKUP\_MYSQL\_2014-01-28.tar.gz
-        - CT101\_BACKUP\_MYSQL\_2014-01-29.tar.gz
+- [CT101] 
+    - backups_daily 
+        - CT101_BACKUP_MYSQL_2014-01-28.tar.gz
+        - CT101_BACKUP_MYSQL_2014-01-29.tar.gz
         - …
-    - backups\_weekly 
-        - CT101\_BACKUP\_MYSQL\_S04.tar.gz
-        - CT101\_BACKUP\_MYSQL\_S05.tar.gz
+    - backups_weekly 
+        - CT101_BACKUP_MYSQL_S04.tar.gz
+        - CT101_BACKUP_MYSQL_S05.tar.gz
         - …
-- \[CT102\] 
-    - <span style="line-height: 1.5em;">backups\_daily</span>
+- [CT102] 
+    - backups_daily
         - …
-    - backups\_weekly 
+    - backups_weekly 
         - …
 
 C’est largement suffisant pour avoir toujours la bonne sauvegarde au bon moment. Attention vous êtes limités à 100 fichiers sur le serveur FTP d’Online.

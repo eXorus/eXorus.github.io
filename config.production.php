@@ -1,6 +1,6 @@
 <?php
 
 return [
-    'baseUrl' => 'https://exorus.github.io/',
+    'baseUrl' => 'https://vincent.dauce.fr',
     'production' => true,
 ];
