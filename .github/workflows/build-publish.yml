@@ -18,6 +18,8 @@ jobs:
       run: npm install
     - name: Build Site
       run: npm run prod
+    - name: Create CNAME File
+      run: echo "vincent.dauce.fr" >> build_production/CNAME
     - name: Stage Files
       run: git add -f build_production
     - name: Commit files
