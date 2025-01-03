@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="description" content="Utilisation de la console online, mise à jour des packages, ssh et firewall">
+
+        <meta property="og:title" content="Administrer un serveur dédié - part 2 : Le socle | Blog de Vincent Dauce"/>
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content="https://vincent.dauce.fr/blog/2014-01-20-administrer-un-serveur-dedie-part-2-le-socle"/>
+        <meta property="og:description" content="Utilisation de la console online, mise à jour des packages, ssh et firewall" />
+
+        <title>Administrer un serveur dédié - part 2 : Le socle | Blog de Vincent Dauce</title>
+
+        <link rel="home" href="https://vincent.dauce.fr">
+        <link rel="icon" href="/favicon.ico">
+        <link href="/blog/feed.atom" type="application/atom+xml" rel="alternate" title="Blog de Vincent Dauce Atom Feed">
+
+                    <!-- Fathom - beautiful, simple website analytics -->
+            <script src="https://cdn.usefathom.com/script.js" data-site="VSUJDIGQ" defer></script>
+            <!-- / Fathom -->
+        
+        <link href="https://fonts.googleapis.com/css?family=Nunito+Sans:300,300i,400,400i,700,700i,800,800i" rel="stylesheet">
+        <link rel="stylesheet" href="/assets/build/css/main.css?id=3717bee9ccac7506b103bbe24c27e2de">
+    </head>
+
+    <body class="flex flex-col justify-between min-h-screen bg-gray-100 text-gray-800 leading-normal font-sans">
+        <header class="flex items-center shadow bg-white border-b h-24 py-4" role="banner">
+            <div class="container flex items-center max-w-8xl mx-auto px-4 lg:px-8">
+                <div class="flex items-center">
+                    <a href="/" title="Blog de Vincent Dauce home" class="inline-flex items-center">
+                        <img class="h-8 md:h-10 mr-3" src="/assets/img/logo.svg" alt="Blog de Vincent Dauce logo" />
+
+                        <h1 class="text-lg md:text-2xl text-blue-800 font-semibold hover:text-blue-600 my-0">Blog de Vincent Dauce</h1>
+                    </a>
+                </div>
+
+                <div id="vue-search" class="flex flex-1 justify-end items-center">
+                    <search></search>
+
+                    <nav class="hidden lg:flex items-center justify-end text-lg">
+    <a title="Blog de Vincent Dauce Blog" href="/blog"
+        class="ml-6 text-gray-700 hover:text-blue-600 ">
+        Blog
+    </a>
+
+    <a title="Blog de Vincent Dauce About" href="/about"
+        class="ml-6 text-gray-700 hover:text-blue-600 ">
+        About
+    </a>
+
+    <a title="Blog de Vincent Dauce Contact" href="/contact"
+        class="ml-6 text-gray-700 hover:text-blue-600 ">
+        Contact
+    </a>
+</nav>
+
+                    <button class="flex justify-center items-center bg-blue-500 border border-blue-500 h-10 px-5 rounded-full lg:hidden focus:outline-none"
+    onclick="navMenu.toggle()"
+>
+    <svg id="js-nav-menu-show" xmlns="http://www.w3.org/2000/svg"
+        class="fill-current text-white h-9 w-4" viewBox="0 0 32 32"
+    >
+        <path d="M4,10h24c1.104,0,2-0.896,2-2s-0.896-2-2-2H4C2.896,6,2,6.896,2,8S2.896,10,4,10z M28,14H4c-1.104,0-2,0.896-2,2  s0.896,2,2,2h24c1.104,0,2-0.896,2-2S29.104,14,28,14z M28,22H4c-1.104,0-2,0.896-2,2s0.896,2,2,2h24c1.104,0,2-0.896,2-2  S29.104,22,28,22z"/>
+    </svg>
+
+    <svg id="js-nav-menu-hide" xmlns="http://www.w3.org/2000/svg"
+        class="hidden fill-current text-white h-9 w-4" viewBox="0 0 36 30"
+    >
+        <polygon points="32.8,4.4 28.6,0.2 18,10.8 7.4,0.2 3.2,4.4 13.8,15 3.2,25.6 7.4,29.8 18,19.2 28.6,29.8 32.8,25.6 22.2,15 "/>
+    </svg>
+</button>
+
+                </div>
+            </div>
+        </header>
+
+        <nav id="js-nav-menu" class="w-auto px-2 pt-6 pb-2 bg-gray-200 shadow hidden lg:hidden">
+    <ul class="my-0">
+        <li class="pl-4">
+            <a
+                title="Blog de Vincent Dauce Blog"
+                href="/blog"
+                class="block mt-0 mb-4 text-sm no-underline text-gray-800 hover:text-blue-500"
+            >Blog</a>
+        </li>
+        <li class="pl-4">
+            <a
+                title="Blog de Vincent Dauce About"
+                href="/about"
+                class="block mt-0 mb-4 text-sm no-underline text-gray-800 hover:text-blue-500"
+            >About</a>
+        </li>
+        <li class="pl-4">
+            <a
+                title="Blog de Vincent Dauce Contact"
+                href="/contact"
+                class="block mt-0 mb-4 text-sm no-underline text-gray-800 hover:text-blue-500"
+            >Contact</a>
+        </li>
+    </ul>
+</nav>
+
+        <main role="main" class="flex-auto w-full container max-w-4xl mx-auto py-16 px-6">
+                
+    <h1 class="leading-none mb-2">Administrer un serveur dédié - part 2 : Le socle</h1>
+
+    <p class="text-gray-700 text-xl md:mt-0">Vincent Dauce  •  January 20, 2014</p>
+
+                        <a
+                href="/blog/categories/admin"
+                title="View posts in admin"
+                class="inline-block bg-gray-300 hover:bg-blue-200 leading-loose tracking-wide text-gray-800 uppercase text-xs font-semibold rounded mr-4 px-3 pt-px"
+            >admin</a>
+            
+    <div class="border-b border-blue-200 mb-10 pb-4" v-pre>
+        <p>Après cette petite introduction, nous allons réellement commencer l’installation.</p>
+
+<h2>Mes choix</h2>
+
+<p>On va dans cet article voir comment utiliser l’interface Online qui est très intuitive donc vous devriez pas avoir besoin de moi. Puis configurer la Debian pour la sécuriser un peu avant de l’utiliser plus que ça.</p>
+
+<p>Pourquoi une Debian ? car j’ai toujours aimé cette distribution qui est très stable, qui est la maman de beaucoup d’autres distribution avec une philosophie très appréciable ( non commerciale, collaborative et qui sort pas tous les 6 mois mais quand elle est prête). Donc un très bon choix pour un serveur qui se doit d’être sécurisé avec des mises à jours de sécurité très régulières.</p>
+
+<p>———————————————————————————</p>
+
+<p>27/04/2014 : Ajout de l’expiration du mot de passe au bout de 100 jours pour plus de sécurité (cmd chage)</p>
+
+<p>22/06/2014 : Coquille sur update-rc.d qui prend uniquement le nom du fichier en paramètre et pas le chemin qui est toujours /etc/init.d</p>
+
+<p>———————————————————————————</p>
+
+<h2>Installation du serveur via la panel Online</h2>
+
+<p>Tout d’abord il faut se connecter à l’interface qui est d’ailleurs super bien faite contrairement à celle d’OVH je trouve.</p>
+
+<p><a href="https://console.online.net">https://console.online.net</a></p>
+
+<p>Dans le menu <strong>Serveur &gt; Liste de vos serveurs</strong> choisir celui que vous venez de commander et cliquer dessus.</p>
+
+<p>Cliquer sur le bouton <strong>Installer</strong> à droite dans le menu.</p>
+
+<p>Choisir <strong>Distributions serveur &gt; Debian 7 64 bits</strong></p>
+
+<p>Laisser le <strong>partitionnement par défaut</strong>, nous serons donc en RAID1 soit une bonne sécurité car 2 disques durs et les données sont en double. Si un disque dur lâche, Online se charge de le changer et comme ça aucune perte de données et encore moins d’interruption de service.</p>
+
+<p>On conserve le nom de la machine Online, on <strong>choisit un mot de passe pour le root</strong> et un mot de passe pour un compte utilisateur. Pas d’inquiétude on le changera tout à l’heure.</p>
+
+<p>Puis valider les dernières étapes et <strong>attendre 1h que l’installation se termine</strong> correctement avant de vous connecter dessus pour la première fois sur votre nouveau serveur dédié.</p>
+
+<h2>Première actions</h2>
+
+<p>Comme je le disais précédemment on va commencer par changer les mots de passe car on ne sait jamais le mot de passe qu’on a mit la première fois c’était sur internet donc c’est pas sûr. Commande à utiliser pour le compte root et le compte utilisateur créé précédemment. On rajoute une expiration du mot de passe à 100 jours pour améliorer la sécurité.</p>
+
+<p>Mettre à jour les mots de passe:</p>
+
+<pre><code class="language-bash">passwd root
+chage -M 100 root
+</code></pre>
+
+<p>Ensuite on passe à la mise à jour de notre Debian, comme il y en a régulièrement il faut le faire. On verra plus tard comment l’automatiser. Par la même occasion vous remarquez qu’on utilise toujours « aptitude » au lieu « apt-get » pour la gestion des paquets sous Debian car c’est celui qui est <a href="http://www.debian.org/doc/manuals/debian-faq/ch-pkgtools.fr.html#s-aptitude">recommandé</a>. (Si aptitude n’est pas installé il suffit de faire « apt-get install aptitude »)</p>
+
+<p>Première mise à jour:</p>
+
+<pre><code class="language-bash">aptitude update
+aptitude upgrade
+</code></pre>
+
+<p>J’ai pris l’habitude de supprimer les services inutiles pour mes besoins car si on a moins de service alors on a plus de performance et moins de faille de sécurité.</p>
+
+<p>Pour le moment la liste se compose de :</p>
+
+<ul>
+<li>telnet (protocole de communication assez ancien que je n’utilise pas)</li>
+<li>exim4 (agent de transport de courrier mais pas necessaire dans mon cas)</li>
+</ul>
+
+<p>Supprimer les services inutiles:</p>
+
+<pre><code class="language-bash">aptitude remove telnet
+service exim4 stop
+update-rc.d -f exim4 remove
+rm /etc/init.d/exim4
+aptitude purge exim4
+</code></pre>
+
+<h2>Sécuriser le service SSH</h2>
+
+<p>Le service SSH est la première cible des attaques et le seul accès à votre serveur donc il faut le sécuriser un maximum pour éviter de se faire attaquer.</p>
+
+<p>Si vous me croyez pas il suffit d’aller voir les logs après l’installation de votre serveur dans /var/log/auth.log.</p>
+
+<p>On change le port par défaut car la plupart des robots utilise 22 pour essayer des milliards de login et password. On interdit au root de se connecter en SSH, ca veut dire qu’on sera toujours obligé de se connecter avec un compte utilisateur puis le compte root et on autorise au cas par cas les comptes. Ça permet d’éviter les robots qui utilisent root comme login. Les 2 dernières directives sont normalement déjà en place sur Debian 7.</p>
+
+<p>vi /etc/ssh/sshd_config:</p>
+
+<pre><code class="language-bash">Port xxxx (le modifier pour ne pas utiliser le port par défaut 22)
+PermitRootLogin no
+AllowUsers monlogin
+PermitEmptyPasswords no
+Protocol 2
+</code></pre>
+
+<p>Puis on relance le service pour prendre en compte la nouvelle configuration. Comme nous n’avons pas encore mis en place un firewall vous devriez pouvoir encore vous connecter dessus 🙂</p>
+
+<p>Relancer le service SSH:</p>
+
+<pre><code class="language-bash">service ssh reload
+</code></pre>
+
+<h2>Mise en place d’un firewall</h2>
+
+<p>Un firewall permet de contrôler les flux réseaux entrants et sortants de votre serveur. Il est primordial d’en avoir un et qu’il soit le plus restrictif possible, si votre machine héberge uniquement un serveur web alors on autorise uniquement le HTTP, ….</p>
+
+<p>La mise en place est assez simple on va écrire un script qui sera exécuté à chaque démarrage du serveur et qui va inscrire les règles que l’on souhaite grâce à un logiciel bien connu dans le monde linux: iptables</p>
+
+<p>Il suffit juste de mettre votre IP au niveau de la variable HN_IP et de bien préciser le port SSH (le même que celui au dessus) dans la variable SSH_PORT:</p>
+
+<pre><code class="language-bash">#!/bin/sh
+#
+# Simple Firewall configuration.
+#
+# Author: eXorus
+#
+# chkconfig: 2345 9 91
+# description: Activates/Deactivates the firewall at boot time
+#
+### BEGIN INIT INFO
+# Provides:          firewall.sh
+# Required-Start:    $syslog $network
+# Required-Stop:     $syslog $network
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start firewall daemon at boot time
+# Description:       Custom Firewall script
+### END INIT INFO
+
+##########################
+# Configuration
+##########################
+
+SSH_PORT="xxxx"
+FTP_PORT="21"
+DNS_PORT="53"
+MAIL_PORT="25"
+NTP_PORT="123"
+HTTP_PORT="80"
+HTTPS_PORT="443"
+
+HN_IP="xx.xx.xx.xx"
+
+
+##########################
+# Start the Firewall rules
+##########################
+
+fw_start(){
+        # Ne pas casser les connexions etablies
+        iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+        iptables -A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+        # Autoriser loopback
+        iptables -t filter      -A INPUT        -i lo -s 127.0.0.0/8 -d 127.0.0.0/8 -j ACCEPT
+        iptables -t filter      -A OUTPUT       -o lo -s 127.0.0.0/8 -d 127.0.0.0/8 -j ACCEPT
+
+        # Autoriser le ping
+        iptables -t filter      -A INPUT        -p icmp -j ACCEPT
+        iptables -t filter      -A OUTPUT       -p icmp -j ACCEPT
+
+        # Autoriser SSH
+        iptables -t filter      -A INPUT        -p tcp --dport $SSH_PORT -j ACCEPT
+        iptables -t filter      -A OUTPUT       -p tcp --dport $SSH_PORT -j ACCEPT
+
+        # Autoriser NTP
+        iptables -t filter      -A OUTPUT       -p udp --dport $NTP_PORT -j ACCEPT
+
+        # Autoriser DNS
+        iptables -t filter -A OUTPUT -p tcp --dport $DNS_PORT -j ACCEPT
+        iptables -t filter -A OUTPUT -p udp --dport $DNS_PORT -j ACCEPT
+        iptables -t filter -A INPUT -p tcp --dport $DNS_PORT -j ACCEPT
+        iptables -t filter -A INPUT -p udp --dport $DNS_PORT -j ACCEPT
+
+        # Autoriser HTTP et HTTPS
+        iptables -t filter -A OUTPUT -p tcp --dport $HTTP_PORT -j ACCEPT
+        iptables -t filter -A INPUT -p tcp --dport $HTTP_PORT -j ACCEPT
+        iptables -t filter -A OUTPUT -p tcp --dport $HTTPS_PORT -j ACCEPT
+        iptables -t filter -A INPUT -p tcp --dport $HTTPS_PORT -j ACCEPT
+
+}
+
+fw_stop(){
+        # Vidage des tables et des regles personnelles
+        iptables -t filter      -F
+        iptables -t nat         -F
+        iptables -t mangle      -F
+        iptables -t filter      -X
+
+        # Interdire toutes connexions entrantes et sortantes
+        iptables -t filter      -P INPUT DROP
+        iptables -t filter      -P FORWARD DROP
+        iptables -t filter      -P OUTPUT DROP
+}
+fw_clear(){
+        # Vidage des tables et des regles personnelles
+        iptables -t filter      -F
+        iptables -t nat         -F
+        iptables -t mangle      -F
+        iptables -t filter      -X
+
+        # Accepter toutes connexions entrantes et sortantes
+        iptables -t filter      -P INPUT ACCEPT
+        iptables -t filter      -P FORWARD ACCEPT
+        iptables -t filter      -P OUTPUT ACCEPT
+}
+
+fw_stop_ip6(){
+        # Vidage des tables et des regles personnelles
+        ip6tables -t filter     -F
+        ip6tables -t mangle     -F
+        ip6tables -t filter     -X
+
+                # Interdire toutes connexions entrantes et sortantes
+        ip6tables -t filter     -P INPUT DROP
+        ip6tables -t filter     -P FORWARD DROP
+        ip6tables -t filter     -P OUTPUT DROP
+}
+
+fw_clear_ip6(){
+        # Vidage des tables et des regles personnelles
+        ip6tables -t filter      -F
+        ip6tables -t mangle      -F
+        ip6tables -t filter      -X
+
+        # Accepter toutes connexions entrantes et sortantes
+        ip6tables -t filter      -P INPUT ACCEPT
+        ip6tables -t filter      -P FORWARD ACCEPT
+        ip6tables -t filter      -P OUTPUT ACCEPT
+}
+
+case "$1" in
+        start|restart)
+                echo -n "Starting firewall.."
+                fw_stop_ip6
+                fw_stop
+                fw_start
+                echo "done."
+                ;;
+        stop)
+                echo -n "Stopping firewall.."
+                fw_stop_ip6
+                fw_stop
+                echo "done."
+                ;;
+        clear)
+                echo -n "Clearing firewall rules.."
+                fw_clear_ip6
+                fw_clear
+                echo "done."
+                ;;
+        *)
+                echo "Usage: $0 {start|stop|restart|clear}"
+                exit 1
+                ;;
+esac
+
+exit 0
+</code></pre>
+
+<p>Pour tester le script il suffit de le lancer une première fois et vérifier que tout fonctionne. Si c’est pas le cas redémarrer le serveur pour y avoir accès de nouveau.</p>
+
+<p>Relancer le firewall:</p>
+
+<pre><code class="language-bash">firewall.sh start
+</code></pre>
+
+<p>Après l’avoir validé, il faut que le script se lance à chaque fois que le serveur démarre :</p>
+
+<p>Relancer le firewall automatiquement:</p>
+
+<pre><code class="language-bash">chmod +x /etc/init.d/firewall.sh
+chown root:root /etc/init.d/firewall.sh
+update-rc.d firewall.sh defaults
+</code></pre>
+    </div>
+
+    <nav class="flex justify-between text-sm md:text-base">
+        <div>
+                            <a href="https://vincent.dauce.fr/blog/2014-01-15-administrer-un-serveur-dedie-part-1-introduction" title="Older Post: Administrer un serveur dédié - part 1 : Introduction">
+                    &LeftArrow; Administrer un serveur dédié - part 1 : Introduction
+                </a>
+                    </div>
+
+        <div>
+                            <a href="https://vincent.dauce.fr/blog/2014-01-25-administrer-un-serveur-dedie-part-3-virtualisation" title="Newer Post: Administrer un serveur dédié - part 3 : Virtualisation">
+                    Administrer un serveur dédié - part 3 : Virtualisation &RightArrow;
+                </a>
+                    </div>
+    </nav>
+        </main>
+
+        <footer class="bg-white text-center text-sm mt-12 py-4" role="contentinfo">
+            <ul class="flex flex-col md:flex-row justify-center list-none">
+                <li class="md:mr-2">
+                    &copy; <a href="https://tighten.co" title="Tighten website">Tighten</a> 2025.
+                </li>
+
+                <li>
+                    Built with <a href="http://jigsaw.tighten.co" title="Jigsaw by Tighten">Jigsaw</a>
+                    and <a href="https://tailwindcss.com" title="Tailwind CSS, a utility-first CSS framework">Tailwind CSS</a>.
+                </li>
+            </ul>
+        </footer>
+
+        <script src="/assets/build/js/main.js?id=ab5beb18484060678105469b256b9364"></script>
+
+        <script>
+    const navMenu = {
+        toggle() {
+            const menu = document.getElementById('js-nav-menu');
+            menu.classList.toggle('hidden');
+            menu.classList.toggle('lg:block');
+            document.getElementById('js-nav-menu-hide').classList.toggle('hidden');
+            document.getElementById('js-nav-menu-show').classList.toggle('hidden');
+        },
+    }
+</script>
+    </body>
+</html>

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="description" content="">
+
+        <meta property="og:title" content="Mon premier projet Open Source php-mime-mail-parser | Blog de Vincent Dauce"/>
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content="https://vincent.dauce.fr/blog/2014-03-08-vpmel-mon-premier-projet-open-source"/>
+        <meta property="og:description" content="" />
+
+        <title>Mon premier projet Open Source php-mime-mail-parser | Blog de Vincent Dauce</title>
+
+        <link rel="home" href="https://vincent.dauce.fr">
+        <link rel="icon" href="/favicon.ico">
+        <link href="/blog/feed.atom" type="application/atom+xml" rel="alternate" title="Blog de Vincent Dauce Atom Feed">
+
+                    <!-- Fathom - beautiful, simple website analytics -->
+            <script src="https://cdn.usefathom.com/script.js" data-site="VSUJDIGQ" defer></script>
+            <!-- / Fathom -->
+        
+        <link href="https://fonts.googleapis.com/css?family=Nunito+Sans:300,300i,400,400i,700,700i,800,800i" rel="stylesheet">
+        <link rel="stylesheet" href="/assets/build/css/main.css?id=3717bee9ccac7506b103bbe24c27e2de">
+    </head>
+
+    <body class="flex flex-col justify-between min-h-screen bg-gray-100 text-gray-800 leading-normal font-sans">
+        <header class="flex items-center shadow bg-white border-b h-24 py-4" role="banner">
+            <div class="container flex items-center max-w-8xl mx-auto px-4 lg:px-8">
+                <div class="flex items-center">
+                    <a href="/" title="Blog de Vincent Dauce home" class="inline-flex items-center">
+                        <img class="h-8 md:h-10 mr-3" src="/assets/img/logo.svg" alt="Blog de Vincent Dauce logo" />
+
+                        <h1 class="text-lg md:text-2xl text-blue-800 font-semibold hover:text-blue-600 my-0">Blog de Vincent Dauce</h1>
+                    </a>
+                </div>
+
+                <div id="vue-search" class="flex flex-1 justify-end items-center">
+                    <search></search>
+
+                    <nav class="hidden lg:flex items-center justify-end text-lg">
+    <a title="Blog de Vincent Dauce Blog" href="/blog"
+        class="ml-6 text-gray-700 hover:text-blue-600 ">
+        Blog
+    </a>
+
+    <a title="Blog de Vincent Dauce About" href="/about"
+        class="ml-6 text-gray-700 hover:text-blue-600 ">
+        About
+    </a>
+
+    <a title="Blog de Vincent Dauce Contact" href="/contact"
+        class="ml-6 text-gray-700 hover:text-blue-600 ">
+        Contact
+    </a>
+</nav>
+
+                    <button class="flex justify-center items-center bg-blue-500 border border-blue-500 h-10 px-5 rounded-full lg:hidden focus:outline-none"
+    onclick="navMenu.toggle()"
+>
+    <svg id="js-nav-menu-show" xmlns="http://www.w3.org/2000/svg"
+        class="fill-current text-white h-9 w-4" viewBox="0 0 32 32"
+    >
+        <path d="M4,10h24c1.104,0,2-0.896,2-2s-0.896-2-2-2H4C2.896,6,2,6.896,2,8S2.896,10,4,10z M28,14H4c-1.104,0-2,0.896-2,2  s0.896,2,2,2h24c1.104,0,2-0.896,2-2S29.104,14,28,14z M28,22H4c-1.104,0-2,0.896-2,2s0.896,2,2,2h24c1.104,0,2-0.896,2-2  S29.104,22,28,22z"/>
+    </svg>
+
+    <svg id="js-nav-menu-hide" xmlns="http://www.w3.org/2000/svg"
+        class="hidden fill-current text-white h-9 w-4" viewBox="0 0 36 30"
+    >
+        <polygon points="32.8,4.4 28.6,0.2 18,10.8 7.4,0.2 3.2,4.4 13.8,15 3.2,25.6 7.4,29.8 18,19.2 28.6,29.8 32.8,25.6 22.2,15 "/>
+    </svg>
+</button>
+
+                </div>
+            </div>
+        </header>
+
+        <nav id="js-nav-menu" class="w-auto px-2 pt-6 pb-2 bg-gray-200 shadow hidden lg:hidden">
+    <ul class="my-0">
+        <li class="pl-4">
+            <a
+                title="Blog de Vincent Dauce Blog"
+                href="/blog"
+                class="block mt-0 mb-4 text-sm no-underline text-gray-800 hover:text-blue-500"
+            >Blog</a>
+        </li>
+        <li class="pl-4">
+            <a
+                title="Blog de Vincent Dauce About"
+                href="/about"
+                class="block mt-0 mb-4 text-sm no-underline text-gray-800 hover:text-blue-500"
+            >About</a>
+        </li>
+        <li class="pl-4">
+            <a
+                title="Blog de Vincent Dauce Contact"
+                href="/contact"
+                class="block mt-0 mb-4 text-sm no-underline text-gray-800 hover:text-blue-500"
+            >Contact</a>
+        </li>
+    </ul>
+</nav>
+
+        <main role="main" class="flex-auto w-full container max-w-4xl mx-auto py-16 px-6">
+                
+    <h1 class="leading-none mb-2">Mon premier projet Open Source php-mime-mail-parser</h1>
+
+    <p class="text-gray-700 text-xl md:mt-0">Vincent Dauce  •  March 8, 2014</p>
+
+                        <a
+                href="/blog/categories/php"
+                title="View posts in php"
+                class="inline-block bg-gray-300 hover:bg-blue-200 leading-loose tracking-wide text-gray-800 uppercase text-xs font-semibold rounded mr-4 px-3 pt-px"
+            >php</a>
+            
+    <div class="border-b border-blue-200 mb-10 pb-4" v-pre>
+        <p>Contrairement aux autres articles celui ci sera moins technique, je vais vous raconter une histoire comment j’ai créé mon premier projet Open Source <a href="https://github.com/eXorus/php-mime-mail-parser">php-mime-mail-parser</a>.</p>
+
+<p>Ce projet m’a permis pour la première fois de :</p>
+
+<ul>
+<li>Partager mon code et obtenir des retours</li>
+<li>Utiliser GitHub pour distribuer mon code</li>
+<li>Mettre en place des tests unitaires</li>
+<li>Mettre en place un package avec Composer</li>
+</ul>
+
+<h2>Histoire</h2>
+
+<p>A mon travail nous utilisions <a href="www.yopmail.com">www.yopmail.com</a> pour se créer des adresses mails fictives sans avoir à créer de compte et en pouvant quand même lire les emails. Comme tous les développeurs Web, quand il s’agit de tester un site il faut créer plusieurs comptes, vérifier les emails de confirmation de compte, les emails de commandes, … et yopmail est bien pratique pour ca.</p>
+
+<p>Mais nous avions un problème, c’est que les automates qui effectuaient les tests automatisés la nuit était pris pour des robots malveillants donc Yopmail affichait des <a href="http://fr.wikipedia.org/wiki/CAPTCHA">captchas</a> et donc on se retrouvait avec des tests en erreur le matin.</p>
+
+<p>Curieux comme je suis j’ai voulu comprendre comment Yopmail fonctionnait et si il était possible de reproduire ce système. Je suis entrée dans le monde des mails et du parsing 🙂</p>
+
+<p>Après ma petite analyse j’ai compris qu’il me fallait :</p>
+
+<ul>
+<li>Un serveur mail (Postfix) pour recevoir les mails et les envoyer sur un script PHP</li>
+<li>Un script PHP pour parser le mail et l’insérer dans une base de données en récupérant :
+
+<ul>
+<li>l’expéditeur</li>
+<li>le destinataire</li>
+<li>le titre</li>
+<li>le corps du mail format texte et html</li>
+<li>les fichiers attachés</li>
+<li>…</li>
+</ul></li>
+<li>Une application Web pour visualiser les mails en base de données</li>
+</ul>
+
+<p>Le plus compliqué fut le script pour parser un mail en PHP et c’est là que j’ai découvert <a href="https://code.google.com/p/php-mime-mail-parser/">php-mime-mail-parser</a></p>
+
+<p>Projet Open Source sur Google Code qui semblait correspondre à mes attentes. J’ai donc commencé à télécharger cette classes PHP pour l’utiliser dans mon application Web. Mon application a commencé à être utilisée par les équipes de tests à mon boulot et les anomalies sont arrivées essentiellement sur le parsing.</p>
+
+<p>Comme le code de cette classe était complexe (ie : il fallait connaitre les <a href="http://fr.wikipedia.org/wiki/Multipurpose_Internet_Mail_Extensions">standards des mails</a>) je me contentais bien souvent d’essayer de trouver le correctif dans les commentaires <a href="https://code.google.com/p/php-mime-mail-parser/issues/list">des anomalies de cette classe</a>.</p>
+
+<p>Au bout d’un moment ça commençait à être vraiment complexe je modifiait toujours le même fichier car il y en a qu’un, les gens parlaient de ligne à modifier mais comme c’était pas la première modification ça correspondait plus et puis je ne savais jamais si un correctif n’entraînait pas d’autres régressions ou écrasait un correctif que j’avais mis en place quelques semaine plus tôt.</p>
+
+<p>C’était le bordel et ça ne pouvait plus continuer comme ça surtout pour quelqu’un qui prône la Qualité dans son boulot.</p>
+
+<h2>La naissance d’un fork</h2>
+
+<p>La solution créer un fork sur GitHub qui est la plateforme à la mode pour partager son code. Ma méthode pour résoudre ma problématique :</p>
+
+<ul>
+<li>Créer un bug sur GitHub quand je constate un problème</li>
+<li>Créer un test unitaire qui reproduit ce bug</li>
+<li>Corriger le bug</li>
+<li>Relancer mes tests unitaires pour voir que tout est vert</li>
+<li>Commit</li>
+</ul>
+
+<p>J’ai donc téléchargé à nouveau le code du projet, je l’ai déposé sur Github et j’ai commencé à lire tous les bugs sur Google Code pour essayer de les reproduire.</p>
+
+<p>Voici donc le bébé sur GitHub : <a href="https://github.com/eXorus/php-mime-mail-parser">eXorus/php-mime-mail-parser</a></p>
+
+<p>A ce jour il y a plus de 20 tests vérifiant 53 assertions, j’en suis fier. Merci à Juan Treminio qui m’a permis d’apprendre les tests unitaires sous PHP avec son article <a href="https://jtreminio.com/2013/03/unit-testing-tutorial-introduction-to-phpunit/">Unit Testing Tutorial</a> en 6 parties.</p>
+
+<h2>La contribution</h2>
+
+<p>La première fois que l’on reçoit une contribution sur un projet Open Source est indescriptible, c’était il y a 5 mois avec le message suivant :</p>
+
+<blockquote>
+  <p>Over the last few months, I've tested around 10 PHP email parsing solutions. eXorus, you've nailed it! My assessment is that your modifications to MimeMailParser.class.php have made it the most effective php email parser around in terms of performance, foreign character encoding, attachment handling, and ease of use (once MailParse is installed).</p>
+  
+  <p>I've reposted your code with nothing but minor formatting and syntax tweaks. Ignore if you wish :)</p>
+</blockquote>
+
+<p>J’étais heureux et fier que l’on trouve mon projet intéressant. Ça reste un petit projet mais de temps en temps je reçois des modifications à effectuer ou des forks qui se créés à partir de mon code. J’essaye de regarder si il y a des bonnes idées à reprendre on ne sait jamais.</p>
+
+<h2>Distribuer mon package</h2>
+
+<p>La mode est d’utiliser <a href="https://getcomposer.org/">Composer</a> pour distribuer des packages PHP donc j’ai proposé mon package sur <a href="https://packagist.org/packages/exorus/php-mime-mail-parser">Packagist</a> pour faciliter son utilisation.</p>
+
+<p>Et a ce jour le package a été installé 455 fois dont 61 fois sur le dernier mois. Un petit succès pour moi.</p>
+
+<h2>La suite</h2>
+
+<p>Il reste des contributions à traiter et vérifier, rendre le code plus propre et respectueux des standards PHP.</p>
+
+<p>Etudier comment fonctionne les releases pour éviter de toujours développer sur la branche master.</p>
+
+<p>Et surement plein d’autres choses, mais avant tout il faut du temps.</p>
+    </div>
+
+    <nav class="flex justify-between text-sm md:text-base">
+        <div>
+                            <a href="https://vincent.dauce.fr/blog/2014-03-03-php-securite-injection-sql" title="Older Post: Php Sécurité – Découverte des Injections SQL et comment s’en protéger">
+                    &LeftArrow; Php Sécurité – Découverte des Injections SQL et comment s’en protéger
+                </a>
+                    </div>
+
+        <div>
+                            <a href="https://vincent.dauce.fr/blog/2014-03-08-php-securite-faille-xss" title="Newer Post: Php Sécurité – Découverte de la faille XSS et comment s&#039;en protéger">
+                    Php Sécurité – Découverte de la faille XSS et comment s&#039;en protéger &RightArrow;
+                </a>
+                    </div>
+    </nav>
+        </main>
+
+        <footer class="bg-white text-center text-sm mt-12 py-4" role="contentinfo">
+            <ul class="flex flex-col md:flex-row justify-center list-none">
+                <li class="md:mr-2">
+                    &copy; <a href="https://tighten.co" title="Tighten website">Tighten</a> 2025.
+                </li>
+
+                <li>
+                    Built with <a href="http://jigsaw.tighten.co" title="Jigsaw by Tighten">Jigsaw</a>
+                    and <a href="https://tailwindcss.com" title="Tailwind CSS, a utility-first CSS framework">Tailwind CSS</a>.
+                </li>
+            </ul>
+        </footer>
+
+        <script src="/assets/build/js/main.js?id=ab5beb18484060678105469b256b9364"></script>
+
+        <script>
+    const navMenu = {
+        toggle() {
+            const menu = document.getElementById('js-nav-menu');
+            menu.classList.toggle('hidden');
+            menu.classList.toggle('lg:block');
+            document.getElementById('js-nav-menu-hide').classList.toggle('hidden');
+            document.getElementById('js-nav-menu-show').classList.toggle('hidden');
+        },
+    }
+</script>
+    </body>
+</html>

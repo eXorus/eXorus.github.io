@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="description" content="ajout d&#039;un premier site web">
+
+        <meta property="og:title" content="Administrer un serveur dédié - part 6 : Espace Web | Blog de Vincent Dauce"/>
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content="https://vincent.dauce.fr/blog/2014-02-15-administrer-un-serveur-dedie-part-6-espace-web"/>
+        <meta property="og:description" content="ajout d&#039;un premier site web" />
+
+        <title>Administrer un serveur dédié - part 6 : Espace Web | Blog de Vincent Dauce</title>
+
+        <link rel="home" href="https://vincent.dauce.fr">
+        <link rel="icon" href="/favicon.ico">
+        <link href="/blog/feed.atom" type="application/atom+xml" rel="alternate" title="Blog de Vincent Dauce Atom Feed">
+
+                    <!-- Fathom - beautiful, simple website analytics -->
+            <script src="https://cdn.usefathom.com/script.js" data-site="VSUJDIGQ" defer></script>
+            <!-- / Fathom -->
+        
+        <link href="https://fonts.googleapis.com/css?family=Nunito+Sans:300,300i,400,400i,700,700i,800,800i" rel="stylesheet">
+        <link rel="stylesheet" href="/assets/build/css/main.css?id=3717bee9ccac7506b103bbe24c27e2de">
+    </head>
+
+    <body class="flex flex-col justify-between min-h-screen bg-gray-100 text-gray-800 leading-normal font-sans">
+        <header class="flex items-center shadow bg-white border-b h-24 py-4" role="banner">
+            <div class="container flex items-center max-w-8xl mx-auto px-4 lg:px-8">
+                <div class="flex items-center">
+                    <a href="/" title="Blog de Vincent Dauce home" class="inline-flex items-center">
+                        <img class="h-8 md:h-10 mr-3" src="/assets/img/logo.svg" alt="Blog de Vincent Dauce logo" />
+
+                        <h1 class="text-lg md:text-2xl text-blue-800 font-semibold hover:text-blue-600 my-0">Blog de Vincent Dauce</h1>
+                    </a>
+                </div>
+
+                <div id="vue-search" class="flex flex-1 justify-end items-center">
+                    <search></search>
+
+                    <nav class="hidden lg:flex items-center justify-end text-lg">
+    <a title="Blog de Vincent Dauce Blog" href="/blog"
+        class="ml-6 text-gray-700 hover:text-blue-600 ">
+        Blog
+    </a>
+
+    <a title="Blog de Vincent Dauce About" href="/about"
+        class="ml-6 text-gray-700 hover:text-blue-600 ">
+        About
+    </a>
+
+    <a title="Blog de Vincent Dauce Contact" href="/contact"
+        class="ml-6 text-gray-700 hover:text-blue-600 ">
+        Contact
+    </a>
+</nav>
+
+                    <button class="flex justify-center items-center bg-blue-500 border border-blue-500 h-10 px-5 rounded-full lg:hidden focus:outline-none"
+    onclick="navMenu.toggle()"
+>
+    <svg id="js-nav-menu-show" xmlns="http://www.w3.org/2000/svg"
+        class="fill-current text-white h-9 w-4" viewBox="0 0 32 32"
+    >
+        <path d="M4,10h24c1.104,0,2-0.896,2-2s-0.896-2-2-2H4C2.896,6,2,6.896,2,8S2.896,10,4,10z M28,14H4c-1.104,0-2,0.896-2,2  s0.896,2,2,2h24c1.104,0,2-0.896,2-2S29.104,14,28,14z M28,22H4c-1.104,0-2,0.896-2,2s0.896,2,2,2h24c1.104,0,2-0.896,2-2  S29.104,22,28,22z"/>
+    </svg>
+
+    <svg id="js-nav-menu-hide" xmlns="http://www.w3.org/2000/svg"
+        class="hidden fill-current text-white h-9 w-4" viewBox="0 0 36 30"
+    >
+        <polygon points="32.8,4.4 28.6,0.2 18,10.8 7.4,0.2 3.2,4.4 13.8,15 3.2,25.6 7.4,29.8 18,19.2 28.6,29.8 32.8,25.6 22.2,15 "/>
+    </svg>
+</button>
+
+                </div>
+            </div>
+        </header>
+
+        <nav id="js-nav-menu" class="w-auto px-2 pt-6 pb-2 bg-gray-200 shadow hidden lg:hidden">
+    <ul class="my-0">
+        <li class="pl-4">
+            <a
+                title="Blog de Vincent Dauce Blog"
+                href="/blog"
+                class="block mt-0 mb-4 text-sm no-underline text-gray-800 hover:text-blue-500"
+            >Blog</a>
+        </li>
+        <li class="pl-4">
+            <a
+                title="Blog de Vincent Dauce About"
+                href="/about"
+                class="block mt-0 mb-4 text-sm no-underline text-gray-800 hover:text-blue-500"
+            >About</a>
+        </li>
+        <li class="pl-4">
+            <a
+                title="Blog de Vincent Dauce Contact"
+                href="/contact"
+                class="block mt-0 mb-4 text-sm no-underline text-gray-800 hover:text-blue-500"
+            >Contact</a>
+        </li>
+    </ul>
+</nav>
+
+        <main role="main" class="flex-auto w-full container max-w-4xl mx-auto py-16 px-6">
+                
+    <h1 class="leading-none mb-2">Administrer un serveur dédié - part 6 : Espace Web</h1>
+
+    <p class="text-gray-700 text-xl md:mt-0">Vincent Dauce  •  February 15, 2014</p>
+
+                        <a
+                href="/blog/categories/admin"
+                title="View posts in admin"
+                class="inline-block bg-gray-300 hover:bg-blue-200 leading-loose tracking-wide text-gray-800 uppercase text-xs font-semibold rounded mr-4 px-3 pt-px"
+            >admin</a>
+            
+    <div class="border-b border-blue-200 mb-10 pb-4" v-pre>
+        <p>Vous souhaitez installer Prestashop, WordPress ou créer votre site de A à Z ? et bien il vous faut un espace web que l’on va créer maintenant.</p>
+
+<p>Le socle est présent puisque dans l’article précédent nous avons terminé l’installation du serveur Web.</p>
+
+<p>Cette procédure est à répéter autant de fois que vous voulez, par exemple pour ma part j’ai :</p>
+
+<ul>
+<li>Ce blog bien sur : <a href="http://vincent.dauce.fr/">http://vincent.dauce.fr</a></li>
+<li>La marque de mon amie avec :
+
+<ul>
+<li>un site : <a href="http://www.sage-et-sauvage.fr">http://www.sage-et-sauvage.fr</a></li>
+<li>un blog : <a href="http://blog.sage-et-sauvage.fr/">http://blog.sage-et-sauvage.fr</a></li>
+<li>une boutique en ligne : <a href="http://shop.sage-et-sauvage.fr/">http://shop.sage-et-sauvage.fr</a></li>
+</ul></li>
+<li>Le site d’une association : <a href="http://www.actessen.fr/">http://www.actessen.fr</a></li>
+<li>Le site d’une yourte : <a href="http://yourteauborddeleau.com/">http://yourteauborddeleau.com</a></li>
+</ul>
+
+<p>———————————————————————————</p>
+
+<p>27/04/2014 : Ajout de l’expiration du mot de passe au bout de 100 jours pour plus de sécurité (cmd chage)</p>
+
+<p>29/06/2014 : Ajout de « Configurer le container avec un nom de domaine »</p>
+
+<p>———————————————————————————</p>
+
+<h2>Accès Web et SFTP</h2>
+
+<p>Pour créer un hébergement comme j’utilise le mode userdir, on commence par ajouter un compte « blogtuto » dans le groupe www-data (group d’Apache)</p>
+
+<p>Ajouter un compte:</p>
+
+<pre><code class="language-bash">useradd -g www-data -m blogtuto
+passwd blogtuto
+chage -M 100 blogtuto
+chown -R root:www-data /home/blogtuto/
+chmod -R 750 /home/blogtuto/
+chown -R blogtuto:www-data /home/blogtuto/www/
+chmod -R 750 /home/blogtuto/www/
+</code></pre>
+
+<p>Avec ces quelques commande plein de choses sont faites :</p>
+
+<ul>
+<li>Création d’un compte</li>
+<li>Modification du mot de passe (pour en mettre un compliqué : 50 caractères avec majuscules, minuscules, chiffres et caractères spéciaux)</li>
+<li>Création d’un répertoire personnel /home/blogtuto avec
+
+<ul>
+<li>/home/blogtuto/logs pour stocker les logs apache</li>
+<li>/home/blogtuto/www pour stocker les fichiers web</li>
+</ul></li>
+<li>Création d’une page web de bienvenue : index.html dans le dossier www</li>
+<li>Mise à jour des droits pour autoriser Apache à servir les pages et le compte blogtuto à les modifier via le SFTP.</li>
+</ul>
+
+<p>On peut déjà se connecter sur le SFTP (sftp://CT101_IP_PUBLIC:SSH_PORT) et modifier la page index.html ou créer des nouveaux fichiers dans le dossier www mais il n’est toujours pas possible de voir la page index.html car nous ne l’avons pas autorisé.</p>
+
+<p>vi /etc/apache2/apache2.conf:</p>
+
+<pre><code class="language-bash">UserDir enabled blogtuto
+</code></pre>
+
+<p>La ligne est à rajouter juste après « UserDir /home/*/www », un espace doit séparer chaque compte donc à la fin on peut avoir des choses comme ca :</p>
+
+<p>Configuration UserDir:</p>
+
+<pre><code class="language-bash"># Configuration du module UserDir
+UserDir disabled
+UserDir /home/*/www
+UserDir enabled blogtuto blogtuto2 blogtuto3
+</code></pre>
+
+<p>Et recharger la configuration apache2</p>
+
+<p>Recharger apache:</p>
+
+<pre><code class="language-bash">service apache2 reload
+</code></pre>
+
+<p>Saisir http://CT101_IP_PUBLIC/~blogtuto dans votre navigateur préféré et vous devriez voir la page index.html.</p>
+
+<h2>Accès MySQL</h2>
+
+<p>On se connecte avec le compte root et le mot de passe que vous avez mis dans l’article précédent :</p>
+
+<p>Création d'un accès MySQL:</p>
+
+<pre><code class="language-bash">mysql -h localhost -u root -p
+mysql &gt; create database blogtutoDB;
+mysql &gt; grant all privileges on blogtutoDB.* to blogtuto@localhost identified by 'mypasswd';
+mysql &gt; flush privileges;
+mysql &gt; exit;
+</code></pre>
+
+<p>Avec ces commandes nous avons créé une nouvelle base de données blogtutoDB et avons attribués tous les droits sur cette base uniquement à un nouvel utilisateur blogtuto que nous créons avec le mot de passe passwd.</p>
+
+<p>Si vous avez déjà mis en place les sauvegardes MySQL avec le tuto <a href="http://vincent.dauce.fr/administrer-un-serveur-dedie-part-7-backup-mysql/" title="Administrer un serveur dédié – part 7 : Backup MySQL">Administrer un serveur dédié – part 7 : Backup MySQL</a>, pensez à rajouter les droits pour la sauvegarde automatique entre le grant initial et le flush privileges :</p>
+
+<p>Ajouter la sauvegarde de la base en automatique:</p>
+
+<pre><code class="language-sql">GRANT SELECT , INSERT , LOCK TABLES ON `blogtutoDB` . * TO 'mysql-backup-manager'@'localhost';
+</code></pre>
+
+<h2>Configurer le container avec un nom de domaine</h2>
+
+<p>Une bonne pratique à avoir est de rajouter le nom de domaine dans le fichier host du container. Pour cela vous devez juste rajouter « blogtuto.com » sur la première ligne du fichier host après localhost :</p>
+
+<p>vi /etc/hosts
+Vous pouvez rajouter autant de domaines que vous le souhaitez séparé par des espaces.</p>
+
+<h2>Configurer le virtual host Apache avec un nom de domaine</h2>
+
+<p>La méthode de userdir est sympathique quand on a pas nom de domaine mais quand on en a un alors il faut configurer Apache pour reconnaître ce domaine et rediriger vers la bonne home.</p>
+
+<p>Il faut donc créer un virtual host (nouveau fichier)</p>
+
+<p>vi /etc/apache2/sites-available/01-blogtuto.com:</p>
+
+<pre><code class="language-bash">&lt;VirtualHost *:80&gt;
+        ServerAdmin blogtuto@localhost
+        ServerName www.blogtuto.com
+        ServerAlias blogtuto.com
+
+        DocumentRoot /home/blogtuto/www
+        &lt;Directory /home/blogtuto/www&gt;
+                Options None
+                AllowOverride None
+        &lt;/Directory&gt;
+
+        ErrorLog /home/blogtuto/logs/error.log
+
+        # Possible values include: debug, info, notice, warn, error, crit,
+        # alert, emerg.
+        LogLevel warn
+
+        CustomLog /home/blogtuto/logs/access.log combined
+
+&lt;/VirtualHost&gt;
+</code></pre>
+
+<p>Et pour le coup il y a du travail car beaucoup de configuration à faire et à expliquer.</p>
+
+<p>Déjà le nom du fichier « 01-blogtuto.com » c’est une convention personnel :</p>
+
+<ul>
+<li>On commence par 01, puis 02, … : Les virtual host sont pris dans l’ordre avec Apache donc si plusieurs correspondent c’est le premier qui sera pris. Donc on essaye de les classer au mieux.</li>
+<li>Ensuite blogtuto.com pour la conf du domaine blogtuto.com c’est plus facile à ce souvenir mais c’est pas nécessaire techniquement tous les fichiers sont pris par apache</li>
+</ul>
+
+<p>Pour le fichier de conf :</p>
+
+<ul>
+<li>VirtualHost *:80 : On peut avoir plusieurs balise dans un fichier mais je préfère en avoir qu’un. Ici on dit que ce virtual host écoutera sur le port 80 (http et donc pas https) sur n’importe qu’elle IP comme le container en a qu’un çà sera toujours la même mais si vous avez plusieurs IP sur le même container il faut préciser</li>
+<li><a href="http://httpd.apache.org/docs/2.2/fr/mod/core.html#ServerAdmin">ServerAdmin</a> : c’est l’adresse mail de contact qui recevra les messages d’erreurs donc mon utilisateur blogtuto@localhost</li>
+<li><a href="http://httpd.apache.org/docs/2.2/fr/mod/core.html#ServerName">ServerName</a> : La directive la plus importante qui va permettre d’identifier le virtual host à utiliser donc l’adresse la plus importante soit www.blogtuto.com ou blogtuto.com en fonction</li>
+<li><a href="http://httpd.apache.org/docs/2.2/fr/mod/core.html#ServerAlias">ServerAlias</a> : La directive alternative donc si vous avez mis www.blogtuto.com mettez blogtuto.com et inversement</li>
+<li><a href="http://httpd.apache.org/docs/2.2/fr/mod/core.html#DocumentRoot">DocumentRoot</a> : Indique la racine quand on appel http://www.blogtuto.com/index.html avec DocumentRoot = /home/blogtuto/www, Apache traduit par le fichier /home/blogtuto/www/index.html (Ne pas mettre de slash à la fin)</li>
+<li><a href="http://httpd.apache.org/docs/2.2/fr/mod/core.html#Directory">Directory</a> : On va mettre au moins une balise directory avec la même valeur que DocumentRoot et ensuite on peut rajouter d’autres si nécessaire. C’est dans cette directive qu’on va devoir mettre les configurations applicables pour un dossier/sous-dossier, … On reviendra plus tard sur les directives intéressantes à rajouter ou supprimer. On interdit tout pour le moment</li>
+<li><a href="http://httpd.apache.org/docs/2.2/fr/mod/core.html#ErrorLog">ErrorLog</a> et CustomLog : pour avoir des logs Apache dans le répertoire logs que nous avons créé. On se place au niveau warn pour recevoir un maximum d’information si on veut diagnostiquer un jour.</li>
+</ul>
+
+<p>Pour prendre en compte nos modifications il faut activer le nouveau virtual host et recharger Apache :</p>
+
+<p>Activer un site et recharger Apache:</p>
+
+<pre><code class="language-bash">a2ensite 01-blogtuto.com
+service apache2 reload
+</code></pre>
+
+<h2>Encore plus loin avec Directory</h2>
+
+<h3>AllowOverride</h3>
+
+<p>J’ai pris l’habitude de ne jamais autoriser AllowOverride donc le mettre à None pour une question de performance. Cette directive permet d’utiliser les fameux fichier .htaccess qui permette de réécrire la configuration d’Apache à la volée. Seulement voilà ça demande des ressources à Apache pour contrôler l’existence du fichier et modifier la configuration à la volée. Quand on a accès au serveur et que la configuration ne change pas souvent et qu’on a pas besoin que l’utilisateur choisisse les réglages c’est l’idéal. Si on a vraiment besoin de cet liberté alors je vous conseil de rajouter une directive très stricte. Je vous invite aussi à lire la doc Apache sur le sujet « <a href="http://httpd.apache.org/docs/2.2/fr/howto/htaccess.html#when">Quand doit-on (ne doit-on pas) utiliser les fichiers .htaccess ?</a> »</p>
+
+<p>Donc pour résumer je n’utilise pas de fichiers htaccess. Toutes les directives que je trouve dans un htaccess je le rajoute dans la configuration de mon virtual host et comme ca je profite du cache d’Apache pour une configuration qui ne change jamais ou presque.</p>
+
+<p>Pour WordPress :</p>
+
+<p>Virtual Host Apache pour WordPress:</p>
+
+<pre><code class="language-bash">&lt;Directory /home/blogtuto/www&gt;
+  Options +SymLinksIfOwnerMatch -FollowSymLinks -ExecCGI -Includes -IncludesNOEXEC -Indexes -MultiViews
+  AllowOverride None
+
+  # BEGIN WordPress
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^index\.php$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.php [L]
+  # END WordPress
+&lt;/Directory&gt;
+</code></pre>
+
+<h3>Forcer le WWW ou non</h3>
+
+<p>Il ne faut jamais que vos sites soient accessibles avec 2 URL différentes sinon les statistiques sont faussés. Donc il faut choisir entre www.blogtuto.com ou blogtuto.com.</p>
+
+<p>Pour rediriger toutes les requêtes blogtuto.com vers www.blogtuto.com :</p>
+
+<p>Forcer WWW:</p>
+
+<pre><code class="language-bash">&lt;Directory /home/blogtuto/www&gt;
+    Options +SymLinksIfOwnerMatch -FollowSymLinks -ExecCGI -Includes -IncludesNOEXEC -Indexes -MultiViews
+    AllowOverride None
+
+    # BEGIN Force WWW
+    RewriteEngine On
+    RewriteBase /
+    RewriteCond %{HTTP_HOST} ^blogtuto.com [NC]
+    RewriteRule ^(.*)$ http://www.blogtuto.com/$1 [L,R=301]
+    # END Force WWW
+&lt;/Directory&gt;
+</code></pre>
+
+<p>Et inversement si vous voulez que toutes les requêtes www.blogtuto.com redirigent vers blogtuto.com :</p>
+
+<p>Force NO WWW:</p>
+
+<pre><code class="language-bash">&lt;Directory /home/blogtuto/www&gt;
+    Options +SymLinksIfOwnerMatch -FollowSymLinks -ExecCGI -Includes -IncludesNOEXEC -Indexes -MultiViews
+    AllowOverride None
+
+    # BEGIN Force NO WWW
+    RewriteEngine On
+    RewriteBase /
+    RewriteCond %{HTTP_HOST} !^blogtuto.com [NC]
+    RewriteRule ^(.*)$ http://blogtuto.com/$1 [L,R=301]
+    # END Force NO WWW
+&lt;/Directory&gt;
+</code></pre>
+    </div>
+
+    <nav class="flex justify-between text-sm md:text-base">
+        <div>
+                            <a href="https://vincent.dauce.fr/blog/2014-02-10-administrer-un-serveur-dedie-part-5-serveur-web" title="Older Post: Administrer un serveur dédié - part 5 : Serveur Web">
+                    &LeftArrow; Administrer un serveur dédié - part 5 : Serveur Web
+                </a>
+                    </div>
+
+        <div>
+                            <a href="https://vincent.dauce.fr/blog/2014-03-03-php-securite-injection-sql" title="Newer Post: Php Sécurité – Découverte des Injections SQL et comment s’en protéger">
+                    Php Sécurité – Découverte des Injections SQL et comment s’en protéger &RightArrow;
+                </a>
+                    </div>
+    </nav>
+        </main>
+
+        <footer class="bg-white text-center text-sm mt-12 py-4" role="contentinfo">
+            <ul class="flex flex-col md:flex-row justify-center list-none">
+                <li class="md:mr-2">
+                    &copy; <a href="https://tighten.co" title="Tighten website">Tighten</a> 2025.
+                </li>
+
+                <li>
+                    Built with <a href="http://jigsaw.tighten.co" title="Jigsaw by Tighten">Jigsaw</a>
+                    and <a href="https://tailwindcss.com" title="Tailwind CSS, a utility-first CSS framework">Tailwind CSS</a>.
+                </li>
+            </ul>
+        </footer>
+
+        <script src="/assets/build/js/main.js?id=ab5beb18484060678105469b256b9364"></script>
+
+        <script>
+    const navMenu = {
+        toggle() {
+            const menu = document.getElementById('js-nav-menu');
+            menu.classList.toggle('hidden');
+            menu.classList.toggle('lg:block');
+            document.getElementById('js-nav-menu-hide').classList.toggle('hidden');
+            document.getElementById('js-nav-menu-show').classList.toggle('hidden');
+        },
+    }
+</script>
+    </body>
+</html>

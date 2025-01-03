@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="description" content="gestion d&#039;un hébergement web avec apache, mysql, php.">
+
+        <meta property="og:title" content="Administrer un serveur dédié - part 5 : Serveur Web | Blog de Vincent Dauce"/>
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content="https://vincent.dauce.fr/blog/2014-02-10-administrer-un-serveur-dedie-part-5-serveur-web"/>
+        <meta property="og:description" content="gestion d&#039;un hébergement web avec apache, mysql, php." />
+
+        <title>Administrer un serveur dédié - part 5 : Serveur Web | Blog de Vincent Dauce</title>
+
+        <link rel="home" href="https://vincent.dauce.fr">
+        <link rel="icon" href="/favicon.ico">
+        <link href="/blog/feed.atom" type="application/atom+xml" rel="alternate" title="Blog de Vincent Dauce Atom Feed">
+
+                    <!-- Fathom - beautiful, simple website analytics -->
+            <script src="https://cdn.usefathom.com/script.js" data-site="VSUJDIGQ" defer></script>
+            <!-- / Fathom -->
+        
+        <link href="https://fonts.googleapis.com/css?family=Nunito+Sans:300,300i,400,400i,700,700i,800,800i" rel="stylesheet">
+        <link rel="stylesheet" href="/assets/build/css/main.css?id=3717bee9ccac7506b103bbe24c27e2de">
+    </head>
+
+    <body class="flex flex-col justify-between min-h-screen bg-gray-100 text-gray-800 leading-normal font-sans">
+        <header class="flex items-center shadow bg-white border-b h-24 py-4" role="banner">
+            <div class="container flex items-center max-w-8xl mx-auto px-4 lg:px-8">
+                <div class="flex items-center">
+                    <a href="/" title="Blog de Vincent Dauce home" class="inline-flex items-center">
+                        <img class="h-8 md:h-10 mr-3" src="/assets/img/logo.svg" alt="Blog de Vincent Dauce logo" />
+
+                        <h1 class="text-lg md:text-2xl text-blue-800 font-semibold hover:text-blue-600 my-0">Blog de Vincent Dauce</h1>
+                    </a>
+                </div>
+
+                <div id="vue-search" class="flex flex-1 justify-end items-center">
+                    <search></search>
+
+                    <nav class="hidden lg:flex items-center justify-end text-lg">
+    <a title="Blog de Vincent Dauce Blog" href="/blog"
+        class="ml-6 text-gray-700 hover:text-blue-600 ">
+        Blog
+    </a>
+
+    <a title="Blog de Vincent Dauce About" href="/about"
+        class="ml-6 text-gray-700 hover:text-blue-600 ">
+        About
+    </a>
+
+    <a title="Blog de Vincent Dauce Contact" href="/contact"
+        class="ml-6 text-gray-700 hover:text-blue-600 ">
+        Contact
+    </a>
+</nav>
+
+                    <button class="flex justify-center items-center bg-blue-500 border border-blue-500 h-10 px-5 rounded-full lg:hidden focus:outline-none"
+    onclick="navMenu.toggle()"
+>
+    <svg id="js-nav-menu-show" xmlns="http://www.w3.org/2000/svg"
+        class="fill-current text-white h-9 w-4" viewBox="0 0 32 32"
+    >
+        <path d="M4,10h24c1.104,0,2-0.896,2-2s-0.896-2-2-2H4C2.896,6,2,6.896,2,8S2.896,10,4,10z M28,14H4c-1.104,0-2,0.896-2,2  s0.896,2,2,2h24c1.104,0,2-0.896,2-2S29.104,14,28,14z M28,22H4c-1.104,0-2,0.896-2,2s0.896,2,2,2h24c1.104,0,2-0.896,2-2  S29.104,22,28,22z"/>
+    </svg>
+
+    <svg id="js-nav-menu-hide" xmlns="http://www.w3.org/2000/svg"
+        class="hidden fill-current text-white h-9 w-4" viewBox="0 0 36 30"
+    >
+        <polygon points="32.8,4.4 28.6,0.2 18,10.8 7.4,0.2 3.2,4.4 13.8,15 3.2,25.6 7.4,29.8 18,19.2 28.6,29.8 32.8,25.6 22.2,15 "/>
+    </svg>
+</button>
+
+                </div>
+            </div>
+        </header>
+
+        <nav id="js-nav-menu" class="w-auto px-2 pt-6 pb-2 bg-gray-200 shadow hidden lg:hidden">
+    <ul class="my-0">
+        <li class="pl-4">
+            <a
+                title="Blog de Vincent Dauce Blog"
+                href="/blog"
+                class="block mt-0 mb-4 text-sm no-underline text-gray-800 hover:text-blue-500"
+            >Blog</a>
+        </li>
+        <li class="pl-4">
+            <a
+                title="Blog de Vincent Dauce About"
+                href="/about"
+                class="block mt-0 mb-4 text-sm no-underline text-gray-800 hover:text-blue-500"
+            >About</a>
+        </li>
+        <li class="pl-4">
+            <a
+                title="Blog de Vincent Dauce Contact"
+                href="/contact"
+                class="block mt-0 mb-4 text-sm no-underline text-gray-800 hover:text-blue-500"
+            >Contact</a>
+        </li>
+    </ul>
+</nav>
+
+        <main role="main" class="flex-auto w-full container max-w-4xl mx-auto py-16 px-6">
+                
+    <h1 class="leading-none mb-2">Administrer un serveur dédié - part 5 : Serveur Web</h1>
+
+    <p class="text-gray-700 text-xl md:mt-0">Vincent Dauce  •  February 10, 2014</p>
+
+                        <a
+                href="/blog/categories/admin"
+                title="View posts in admin"
+                class="inline-block bg-gray-300 hover:bg-blue-200 leading-loose tracking-wide text-gray-800 uppercase text-xs font-semibold rounded mr-4 px-3 pt-px"
+            >admin</a>
+            
+    <div class="border-b border-blue-200 mb-10 pb-4" v-pre>
+        <p>Dans cet article nous allons voir comment déployer un serveur web, pour cela nous avons besoin de plusieurs briques :</p>
+
+<ul>
+<li>Apache : c’est le serveur web par excellence qui reste encore majoritaire sur le web. Avec lui on va pouvoir servir des pages web statiques HTML/CSS</li>
+<li>Php : Le langage que j’utilises le plus pour mes sites web.</li>
+<li>MySQL : La base de données qui est aussi prédominante (WordPress, Prestashop, …)</li>
+<li>SFTP : je n’utilise pas de serveur FTP car je n’en vois pas l’intérêt quand on a déjà SSH sur la machine autant activer SFTP.</li>
+</ul>
+
+<p>Voilà bien sur on aurait pu prendre Nginx à la place d’Apache, MariaDB à la plase de MySQL, vsFTPd à la place de sftp … mais il faut faire un choix et on pourra toujours revenir dessus dans un prochain article.</p>
+
+<p>Je vous conseil de rien n’installer sur le host pour le laisser le plus propre possible et d’utiliser un container. Nous souhaitons héberger nos sites sur CT101 que nous venons de créer donc c’est partit.</p>
+
+<h2>Serveur Web – Apache</h2>
+
+<p>Installer Apache:</p>
+
+<pre><code class="language-bash">aptitude install apache2
+</code></pre>
+
+<p>Il va installer plusieurs packages car <a href="https://packages.debian.org/wheezy/apache2">apache2 est un metapaquet</a>.</p>
+
+<p>A la fin de l’installation le serveur web est lancé et fonctionnel. On peut le voir rapidement en saisissant dans votre navigateur l’adresse IP Failover de votre container qui affichera une page web. Avant on avait connexion refusée.</p>
+
+<p>Il y a aussi après le lancement un petit warning que nous allons corriger : « apache2: Could not reliably determine the server’s fully qualified domain name, using 127.0.0.1 for ServerName »</p>
+
+<p>C’est très simple pour ne plus avoir les erreurs vous devez modifier le fichier suivant et ajouter cette ligne à la fin du fichier :</p>
+
+<p>vi /etc/apache2/apache2.conf:</p>
+
+<pre><code class="language-bash">ServerName localhost
+</code></pre>
+
+<p>Vérifions aussi quelques configurations d’Apache pour voir si tout est en ordre :</p>
+
+<p>Vérifier que la configuration d’Apache (normalement c’est celle par défaut) écoute bien sur le port 80. Et aussi sur le port 443 un peu plus bas dans le cas ou on voudrait déployer du SSL ce que nous ferons bientôt pour notre cloud.</p>
+
+<p>vi /etc/apache2/ports.conf:</p>
+
+<pre><code class="language-bash">NameVirtualHost *:80
+Listen 80
+</code></pre>
+
+<p>Modifier en décommentant la ligne (supprimer le #) pour passer Apache2 en UTF-8 c’est la norme sur le web depuis quelques années maintenant et vous ne rencontrerez aucun problème en encodant tous les fichiers en UTF-8.</p>
+
+<p>vi /etc/apache2/conf.d/charset:</p>
+
+<pre><code class="language-bash">AddDefaultCharset UTF-8
+</code></pre>
+
+<p>Pour personnaliser un peu apache je vous conseil 2 modules qui sont presque indispensable pour moi :</p>
+
+<ul>
+<li><a href="http://httpd.apache.org/docs/2.2/mod/mod_rewrite.html">rewrite</a> : permet la réécriture d’URL, tous les sites l’utilisent de nos jours (au lieu d’avoir http://vincent.dauce.fr/index.php?article=1 nous avons http://vincent.dauce.fr/mon-premier-article)</li>
+<li><a href="http://httpd.apache.org/docs/current/mod/mod_userdir.html">userdir</a> : celui là est moins évident ça permet de créer un hébergement web par utilisateur. Pour chaque site hébergé sur ce serveur je vais créer un compte avec un mot de passe pour lui donner accès aux fichiers et avoir un espace web. Pour sécuriser le tout c’est moi qui l’activerait ou non par compte donc par exemple compte root n’a pas d’espace web 🙂</li>
+</ul>
+
+<p>Pour activer les 2 modules ci-dessus nous utilisons :</p>
+
+<p>Activer les modules principaux sur Apache:</p>
+
+<pre><code class="language-bash">a2enmod rewrite
+a2enmod userdir
+</code></pre>
+
+<p>Comme vu plus haut nous allons sécuriser le module userdir avec la configuration suivante (ajouter les lignes à la fin du fichier après ServerName) :</p>
+
+<p>vi /etc/apache2/apache2.conf:</p>
+
+<pre><code class="language-bash"># Configuration du module UserDir
+UserDir disabled
+UserDir /home/*/www
+</code></pre>
+
+<p>Le module userdir est ainsi désactivé et sera activé au cas par cas selon nos besoins. Et nous définissons que les pages web seront dans le répertoire /home/*/www avec * le login du compte.</p>
+
+<p>Pour vous donner une idée, si je veux héberger le site « toto.com » je vais créer un compte toto qui aura donc un répertoire personnel dans /home/toto. Si j’active pour ce compte l’espace web il pourra déposer des fichiers dans /home/toto/www et consultable via le lien CT101_IP_PUBLIC/~toto.</p>
+
+<p>Justement pour éviter d’avoir à créer à chaque fois le dossier www nous allons automatiser la création et créer un dossier logs pour stocker les fichier log d’Apache par compte.</p>
+
+<p>Automatiser la création du dossier www:</p>
+
+<pre><code class="language-bash">mkdir /etc/skel/www
+mkdir /etc/skel/logs
+echo " &lt;strong&gt;Nouvel espace web&lt;/strong&gt; " &gt; /etc/skel/www/index.html
+</code></pre>
+
+<p>Puis recharger la configuration et admirer que vous n’avez plus le message d’erreur :</p>
+
+<p>Recharger apache2:</p>
+
+<pre><code class="language-bash">service apache2 reload
+</code></pre>
+
+<h2>Serveur SQL – MySQL</h2>
+
+<p>Pour installer MySQL c’est très simple voir trop simple 🙂</p>
+
+<p>Installer MySQL:</p>
+
+<pre><code class="language-bash">aptitude install mysql-server
+</code></pre>
+
+<p>On est encore dans le cas d’un metapaquet, on valide et c’est tout.</p>
+
+<p>Je vous conseil de choisir un mot de passe complexe pour le root de MySQL, moi j’utilise 50 caractères avec majuscules, minuscules et chiffres (Pas de caractères spéciaux car j’ai souvent eu des problèmes après pour me connecter avec).</p>
+
+<p>Il existe plein de générateur de mot de passe en ligne, je vous laisse choisir votre préféré moi j’ai pas trouvé. Surement une idée d’application à faire 🙂</p>
+
+<p>Voilà le mien : a4HBSwpwdlF3LafNsPswKM6uZQWGIqrjnUGXkNcoYX3XGE5lZV</p>
+
+<p>à conserver précieusement car c’est le compte root.</p>
+
+<h2>Serveur App – PHP</h2>
+
+<p>Pour PHP aussi pas beaucoup de chose à faire (PHP 5.4) :</p>
+
+<p>Installer PHP:</p>
+
+<pre><code class="language-bash">aptitude install php5
+</code></pre>
+
+<p>Après comme pour Apache il y a des modules plus ou moins importants, voici les principaux :</p>
+
+<ul>
+<li><a href="https://packages.debian.org/wheezy/php5-mysql">php5-mysql</a> : plutôt indispensable celui là sinon comment vous connecter à MySQL que vous venez d’installer ? permet d’activer les fonctions mysql_* (ne plus les utiliser svp c’est trop horrible et obsolète depuis la version 5.5 de PHP), mysqli_* (c’est mieux mais bon) et enfin PDO (ça c’est la classe)</li>
+<li><a href="https://packages.debian.org/wheezy/php5-curl">php5-curl</a> : pour récupérer des fichiers via HTTP ou FTP</li>
+<li><a href="https://packages.debian.org/wheezy/php5-gd">php5-gd</a> : pour traiter des images (resize, traitements, …)</li>
+<li><a href="https://packages.debian.org/wheezy/php5-mcrypt">php5-mcrypt</a> : pour crypter des données sensibles</li>
+<li><a href="https://packages.debian.org/wheezy/libssh2-php">libssh2-php</a> : pour utiliser SSH dans les scripts PHP</li>
+</ul>
+
+<p><a href="http://www.prestashop.com/fr/">Prestashop</a> la boutique en ligne et open source que je vous conseil a besoin de php5-curl pour activer Paypal, php5-gd pour retailler les images, php5-mcrypt pour crypter les données sensibles et bien évidemment php5-mysql.</p>
+
+<p><a href="http://wordpress.org/">WordPress</a> le blog open source qui fait aussi CMS a besoin de libssh2-php pour pouvoir faire les mise à jour en automatique</p>
+
+<p>Pour les installer tous il suffit de lancer :</p>
+
+<p>Installer les modules PHP:</p>
+
+<pre><code class="language-bash">aptitude install php5-mysql php5-gd php5-mcrypt php5-curl libssh2-php
+</code></pre>
+
+<p>Juste après ca vous n’avez rien à faire tout est déjà fonctionnel.</p>
+
+<h2>Serveur Fichier – SFTP</h2>
+
+<p>Pour le serveur de fichier j’utilisais il y a très longtemps des serveurs FTP plus ou moins sécurisés jusqu’au jour ou j’ai découvert que SSH le faisait déjà très bien. Alors pourquoi installer un nouveau service alors qu’on en a déjà un installé et qui tourne ? en plus il y avait la gestion des comptes qui était complexe là c’est le même login et mot de passe.</p>
+
+<p>Vous allez me dire mais j’ai pas envie de donner un accès SSH à mes utilisateurs et bien non on leur donne uniquement le SFTP ils peuvent rien faire de plus c’est donc totalement sécurisé.</p>
+
+<p>Pour celà il faut juste configurer SSH pour permettre de rendre le service que l’on veut c’est à dire offrir aux utilisateurs un accès aux fichiers via un client FTP comme filezilla ou un partage de fichiers.</p>
+
+<p>Il faut donc changer la ligne « Subsystem … » (avant on avait « Subsystem sftp /usr/lib/openssh/sftp-server ») : On indique autoriser le faux shell « internal-sftp » qui va permettre d’interdire l’accès au shell pour les utilisateurs.</p>
+
+<p>Et rajouter quelques lignes après « UserPAM yes ». Pour autoriser le groupe www-data qui est celui d’Apache donc de nos sites.</p>
+
+<ul>
+<li>ChrootDirectory : les utilisateurs ne pourront pas remonter à la racine du serveur et explorer notre serveur. Ils sont bloqués dans leur dossier personnel</li>
+<li>X11Forwarding : on n’autorise pas le partage de bureau (application graphique à distance)</li>
+<li>AllowTcpForwarding : interdire aussi les tunnels SSH</li>
+<li>ForceCommand : pour forcer l’utilisation d’un faux shell et interdire donc un accès SSH</li>
+</ul>
+
+<p>vi /etc/ssh/sshd_config:</p>
+
+<pre><code class="language-bash">Subsystem sftp internal-sftp
+
+# Set this to 'yes' to enable PAM authentication, account processing,
+# and session processing. If this is enabled, PAM authentication will
+# be allowed through the ChallengeResponseAuthentication and
+# PasswordAuthentication. Depending on your PAM configuration,
+# PAM authentication via ChallengeResponseAuthentication may bypass
+# the setting of "PermitRootLogin without-password".
+# If you just want the PAM account and session checks to run without
+# PAM authentication, then enable this but set PasswordAuthentication
+# and ChallengeResponseAuthentication to 'no'.
+UsePAM yes
+    AllowGroups www-data
+    Match Group www-data
+            ChrootDirectory /home/%u
+            X11Forwarding no
+            AllowTcpForwarding no
+            ForceCommand internal-sftp
+</code></pre>
+
+<p>Reste à recharger la configuration de notre service :</p>
+
+<p>Recharger SSH:</p>
+
+<pre><code class="language-bash">service ssh reload
+</code></pre>
+
+<p>Et voilà nous avons un SFTP sécurisé accessible uniquement aux utilisateurs appartenant au groupe www-data. Pour rappel le fichier de conf a déjà été modifié pour interdire au root de pouvoir se connecter et nous avons déjà changé le port par défaut qui était à 22 pour plus de sécurité.</p>
+
+<p>Reste à rajouter des droits car sinon le SFTP interdira de se connecter.</p>
+
+<p>Droits pour SFTP:</p>
+
+<pre><code class="language-bash">chown -R root:www-data /home/
+chmod -R 750 /home/
+</code></pre>
+    </div>
+
+    <nav class="flex justify-between text-sm md:text-base">
+        <div>
+                            <a href="https://vincent.dauce.fr/blog/2014-02-01-administrer-un-serveur-dedie-part-4-premier-container" title="Older Post: Administrer un serveur dédié - part 4 : Premier container">
+                    &LeftArrow; Administrer un serveur dédié - part 4 : Premier container
+                </a>
+                    </div>
+
+        <div>
+                            <a href="https://vincent.dauce.fr/blog/2014-02-15-administrer-un-serveur-dedie-part-6-espace-web" title="Newer Post: Administrer un serveur dédié - part 6 : Espace Web">
+                    Administrer un serveur dédié - part 6 : Espace Web &RightArrow;
+                </a>
+                    </div>
+    </nav>
+        </main>
+
+        <footer class="bg-white text-center text-sm mt-12 py-4" role="contentinfo">
+            <ul class="flex flex-col md:flex-row justify-center list-none">
+                <li class="md:mr-2">
+                    &copy; <a href="https://tighten.co" title="Tighten website">Tighten</a> 2025.
+                </li>
+
+                <li>
+                    Built with <a href="http://jigsaw.tighten.co" title="Jigsaw by Tighten">Jigsaw</a>
+                    and <a href="https://tailwindcss.com" title="Tailwind CSS, a utility-first CSS framework">Tailwind CSS</a>.
+                </li>
+            </ul>
+        </footer>
+
+        <script src="/assets/build/js/main.js?id=ab5beb18484060678105469b256b9364"></script>
+
+        <script>
+    const navMenu = {
+        toggle() {
+            const menu = document.getElementById('js-nav-menu');
+            menu.classList.toggle('hidden');
+            menu.classList.toggle('lg:block');
+            document.getElementById('js-nav-menu-hide').classList.toggle('hidden');
+            document.getElementById('js-nav-menu-show').classList.toggle('hidden');
+        },
+    }
+</script>
+    </body>
+</html>

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="description" content="">
+
+        <meta property="og:title" content="Php Sécurité – Découverte des Injections SQL et comment s’en protéger | Blog de Vincent Dauce"/>
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content="https://vincent.dauce.fr/blog/2014-03-03-php-securite-injection-sql"/>
+        <meta property="og:description" content="" />
+
+        <title>Php Sécurité – Découverte des Injections SQL et comment s’en protéger | Blog de Vincent Dauce</title>
+
+        <link rel="home" href="https://vincent.dauce.fr">
+        <link rel="icon" href="/favicon.ico">
+        <link href="/blog/feed.atom" type="application/atom+xml" rel="alternate" title="Blog de Vincent Dauce Atom Feed">
+
+                    <!-- Fathom - beautiful, simple website analytics -->
+            <script src="https://cdn.usefathom.com/script.js" data-site="VSUJDIGQ" defer></script>
+            <!-- / Fathom -->
+        
+        <link href="https://fonts.googleapis.com/css?family=Nunito+Sans:300,300i,400,400i,700,700i,800,800i" rel="stylesheet">
+        <link rel="stylesheet" href="/assets/build/css/main.css?id=3717bee9ccac7506b103bbe24c27e2de">
+    </head>
+
+    <body class="flex flex-col justify-between min-h-screen bg-gray-100 text-gray-800 leading-normal font-sans">
+        <header class="flex items-center shadow bg-white border-b h-24 py-4" role="banner">
+            <div class="container flex items-center max-w-8xl mx-auto px-4 lg:px-8">
+                <div class="flex items-center">
+                    <a href="/" title="Blog de Vincent Dauce home" class="inline-flex items-center">
+                        <img class="h-8 md:h-10 mr-3" src="/assets/img/logo.svg" alt="Blog de Vincent Dauce logo" />
+
+                        <h1 class="text-lg md:text-2xl text-blue-800 font-semibold hover:text-blue-600 my-0">Blog de Vincent Dauce</h1>
+                    </a>
+                </div>
+
+                <div id="vue-search" class="flex flex-1 justify-end items-center">
+                    <search></search>
+
+                    <nav class="hidden lg:flex items-center justify-end text-lg">
+    <a title="Blog de Vincent Dauce Blog" href="/blog"
+        class="ml-6 text-gray-700 hover:text-blue-600 ">
+        Blog
+    </a>
+
+    <a title="Blog de Vincent Dauce About" href="/about"
+        class="ml-6 text-gray-700 hover:text-blue-600 ">
+        About
+    </a>
+
+    <a title="Blog de Vincent Dauce Contact" href="/contact"
+        class="ml-6 text-gray-700 hover:text-blue-600 ">
+        Contact
+    </a>
+</nav>
+
+                    <button class="flex justify-center items-center bg-blue-500 border border-blue-500 h-10 px-5 rounded-full lg:hidden focus:outline-none"
+    onclick="navMenu.toggle()"
+>
+    <svg id="js-nav-menu-show" xmlns="http://www.w3.org/2000/svg"
+        class="fill-current text-white h-9 w-4" viewBox="0 0 32 32"
+    >
+        <path d="M4,10h24c1.104,0,2-0.896,2-2s-0.896-2-2-2H4C2.896,6,2,6.896,2,8S2.896,10,4,10z M28,14H4c-1.104,0-2,0.896-2,2  s0.896,2,2,2h24c1.104,0,2-0.896,2-2S29.104,14,28,14z M28,22H4c-1.104,0-2,0.896-2,2s0.896,2,2,2h24c1.104,0,2-0.896,2-2  S29.104,22,28,22z"/>
+    </svg>
+
+    <svg id="js-nav-menu-hide" xmlns="http://www.w3.org/2000/svg"
+        class="hidden fill-current text-white h-9 w-4" viewBox="0 0 36 30"
+    >
+        <polygon points="32.8,4.4 28.6,0.2 18,10.8 7.4,0.2 3.2,4.4 13.8,15 3.2,25.6 7.4,29.8 18,19.2 28.6,29.8 32.8,25.6 22.2,15 "/>
+    </svg>
+</button>
+
+                </div>
+            </div>
+        </header>
+
+        <nav id="js-nav-menu" class="w-auto px-2 pt-6 pb-2 bg-gray-200 shadow hidden lg:hidden">
+    <ul class="my-0">
+        <li class="pl-4">
+            <a
+                title="Blog de Vincent Dauce Blog"
+                href="/blog"
+                class="block mt-0 mb-4 text-sm no-underline text-gray-800 hover:text-blue-500"
+            >Blog</a>
+        </li>
+        <li class="pl-4">
+            <a
+                title="Blog de Vincent Dauce About"
+                href="/about"
+                class="block mt-0 mb-4 text-sm no-underline text-gray-800 hover:text-blue-500"
+            >About</a>
+        </li>
+        <li class="pl-4">
+            <a
+                title="Blog de Vincent Dauce Contact"
+                href="/contact"
+                class="block mt-0 mb-4 text-sm no-underline text-gray-800 hover:text-blue-500"
+            >Contact</a>
+        </li>
+    </ul>
+</nav>
+
+        <main role="main" class="flex-auto w-full container max-w-4xl mx-auto py-16 px-6">
+                
+    <h1 class="leading-none mb-2">Php Sécurité – Découverte des Injections SQL et comment s’en protéger</h1>
+
+    <p class="text-gray-700 text-xl md:mt-0">Vincent Dauce  •  March 3, 2014</p>
+
+                        <a
+                href="/blog/categories/php"
+                title="View posts in php"
+                class="inline-block bg-gray-300 hover:bg-blue-200 leading-loose tracking-wide text-gray-800 uppercase text-xs font-semibold rounded mr-4 px-3 pt-px"
+            >php</a>
+            
+    <div class="border-b border-blue-200 mb-10 pb-4" v-pre>
+        <p>Nous allons étudier dans cet article les <a href="http://fr.wikipedia.org/wiki/Injection_SQL">injections SQL</a> et apprendre à s’en protéger.</p>
+
+<h2>Introduction</h2>
+
+<p>Cette faille est la plus importante et celle que nous connaissons le mieux. Mais avant avant de parler <a href="http://vincent.dauce.fr/php-securite-faille-xss/" title="Php Sécurité – Découverte de la faille XSS et comment s’en protéger">des failles plus complexe comme XSS</a> vérifions que vous avez déjà une base en sécurité. Nous allons étudier les impacts de cette faille, la comprendre et enfin s’en protéger.</p>
+
+<p>Cette faille se situe entre l’application et sa base de données, le principe est d’envoyer une requête non prévue par le développeur pour compromettre la sécurité d’une application.</p>
+
+<h2>Découverte de la faille</h2>
+
+<h3>Exemple 1 : Se connecter en tant qu’administrateur sans connaitre le mot de passe</h3>
+
+<p>Imaginer le code suivant pour vous connecter à votre site :</p>
+
+<pre><code class="language-php">$login = $_POST['login'];
+$password = $_POST['password'];
+
+$result = mysql_query("SELECT user_id FROM users WHERE login = '".$login."' AND password = '".$password."'");
+</code></pre>
+
+<p>La requête devrait fonctionner uniquement si le login et le mot de passe sont correcte mais c’est pas le cas. Pour l’instant notre requête ressemblerait à çà :</p>
+
+<pre><code class="language-sql">SELECT user_id FROM users WHERE login = 'admin' AND password = 'azerty'
+</code></pre>
+
+<p>Mais nous pouvons utiliser une injection SQL pour se connecter sans mot de passe avec n’importe quel login.</p>
+
+<p>Avec le login suivant : admin’–</p>
+
+<p>et n’importe quel mot de passe car de toute manière il ne sera pas pris en compte la requête devient :</p>
+
+<pre><code class="language-sql">SELECT user_id FROM users WHERE login = 'admin'--' AND password = 'azerty'
+
+--Equivalent à
+SELECT user_id FROM users WHERE login = 'admin'
+</code></pre>
+
+<p>Les caractères « — » sont interprétés en SQL comme le début d’un commentaire donc comme vous pouvez le voir ci-dessus la requête SQL n’a plus le sens que l’on souhaitait. Elle vérifie le login mais plus le mot de passe donc il suffit d’avoir le login d’une personne pour se connecter. Facile !!!</p>
+
+<h3>Exemple 2 : Supprimer des données</h3>
+
+<p>Imaginons maintenant une page d’un blog http://monblog.fr/view.php?id=66 avec le code PHP suivant :</p>
+
+<pre><code class="language-php">$id = $_GET['id'];
+
+$result = mysql_query("SELECT post_text FROM posts WHERE post_id = '".$id."'");
+</code></pre>
+
+<p>On pourrait penser que le risque est faible par rapport à notre premier exemple. Au pire le pirate pourra lire un autre post sur le blog et bien non. Si on change l’URL pour http://monblog.fr/view.php?id=65′;DROP TABLE posts;–</p>
+
+<p>Ça va lire le post 65 mais en même temps supprimer la table avec tous les posts … bye bye le blog j’espère que vous avez des sauvegardes régulières.</p>
+
+<p>La requête attendue est :</p>
+
+<pre><code class="language-sql">SELECT post_text FROM posts WHERE post_id = '66'
+</code></pre>
+
+<p>La requête obtenue ou plutôt les requêtes obtenues sont :</p>
+
+<pre><code class="language-sql">SELECT post_text FROM posts WHERE post_id = '65';DROP TABLE posts;--'
+</code></pre>
+
+<p>Donc comme nous avons pu le voir tous les caractères spécifiques à SQL doivent être protégés :</p>
+
+<ul>
+<li>« — » : qui permet de commenter tous ce qui est après</li>
+<li>« ; » : qui permet d’exécuter plusieurs requêtes les unes après les autres</li>
+</ul>
+
+<h2>Protection</h2>
+
+<p>La protection est simple : <strong>Never Trust User Input (Ne jamais faire confiance aux données des utilisateurs)</strong></p>
+
+<p>Avant il fallait utiliser des fonctions spécifiques à PHP (mysql_real_escape_string ou caster avec int) pour échapper les caractères mais ça c’était avant. Maintenant que l’extension mysql_* est obsolète vous devez utiliser PDO pour interagir avec une base de donnée.</p>
+
+<p><a href="http://fr2.php.net/manual/fr/class.pdo.php">L’extension PDO</a> permet de gérer l’échappement des caractères pour protéger vos requêtes SQL des pirates à travers les requêtes préparées.</p>
+
+<p>Si on revient sur nos 2 exemples ci-dessous nous devrions écrire les requêtes de cette manière :</p>
+
+<pre><code class="language-php">$login = $_POST['login'];
+$password = $_POST['password'];
+
+$query = $pdo-&gt;prepare("SELECT user_id FROM users WHERE login = :login AND password = :password ");
+
+$query-&gt;bindValue(':login', $login, PDO::PARAM_STR);
+$query-&gt;bindValue(':password', $password, PDO::PARAM_STR);
+
+$query-&gt;execute();
+</code></pre>
+
+<p>Ou pour le second exemple :</p>
+
+<pre><code class="language-php">$id = $_GET['id'];
+
+$query = $pdo-&gt;prepare("SELECT post_text FROM posts WHERE post_id = :post_id");
+
+$query-&gt;bindValue(':post_id', $id, PDO::PARAM_INT);
+
+$query-&gt;execute();
+</code></pre>
+
+<p>La requête SQL est écrite avec des labels commençant par « : ». Ensuite vous assignez des valeurs aux labels en indiquant le type des données :</p>
+
+<ul>
+<li>PARAM_STR pour une chaîne de caractères</li>
+<li>PARAM_INT pour un entier</li>
+<li>… <a href="http://www.php.net/manual/fr/pdo.constants.php">pour la liste exhaustive</a></li>
+</ul>
+
+<h2>Comment ça fonctionne ?</h2>
+
+<p>Toutes les requêtes préparées écrites avec PDO sont sécurisées car l’objectif de ces requêtes est justement de séparer les données de la structure de la requête.</p>
+
+<p>Attention de bien utiliser les bindValue pour les paramètres de vos requêtes sinon vous ne serez pas protégé.</p>
+
+<p>Attention sur les caractères « % » et « _ » ne sont pas échappés donc dans le cas d’une requête avec LIKE comme opérateur si la variable comprend un des 2 caractères il sera transmis tel quel à la BDD.</p>
+
+<p>Pour aller plus loin avec PDO je vous invite à lire le <a href="http://fmaz.developpez.com/tutoriels/php/comprendre-pdo/">tuto de Francois Mazerolle sur developpez</a></p>
+
+<p>Merci à l’auteur ci-dessous qui m’a donnée envie d’écrire cette série d’article :</p>
+
+<p>Source (English) : <a href="http://www.sunnytuts.com/article/php-security-sql-injection">http://www.sunnytuts.com/article/php-security-sql-injection</a></p>
+    </div>
+
+    <nav class="flex justify-between text-sm md:text-base">
+        <div>
+                            <a href="https://vincent.dauce.fr/blog/2014-02-15-administrer-un-serveur-dedie-part-6-espace-web" title="Older Post: Administrer un serveur dédié - part 6 : Espace Web">
+                    &LeftArrow; Administrer un serveur dédié - part 6 : Espace Web
+                </a>
+                    </div>
+
+        <div>
+                            <a href="https://vincent.dauce.fr/blog/2014-03-08-vpmel-mon-premier-projet-open-source" title="Newer Post: Mon premier projet Open Source php-mime-mail-parser">
+                    Mon premier projet Open Source php-mime-mail-parser &RightArrow;
+                </a>
+                    </div>
+    </nav>
+        </main>
+
+        <footer class="bg-white text-center text-sm mt-12 py-4" role="contentinfo">
+            <ul class="flex flex-col md:flex-row justify-center list-none">
+                <li class="md:mr-2">
+                    &copy; <a href="https://tighten.co" title="Tighten website">Tighten</a> 2025.
+                </li>
+
+                <li>
+                    Built with <a href="http://jigsaw.tighten.co" title="Jigsaw by Tighten">Jigsaw</a>
+                    and <a href="https://tailwindcss.com" title="Tailwind CSS, a utility-first CSS framework">Tailwind CSS</a>.
+                </li>
+            </ul>
+        </footer>
+
+        <script src="/assets/build/js/main.js?id=ab5beb18484060678105469b256b9364"></script>
+
+        <script>
+    const navMenu = {
+        toggle() {
+            const menu = document.getElementById('js-nav-menu');
+            menu.classList.toggle('hidden');
+            menu.classList.toggle('lg:block');
+            document.getElementById('js-nav-menu-hide').classList.toggle('hidden');
+            document.getElementById('js-nav-menu-show').classList.toggle('hidden');
+        },
+    }
+</script>
+    </body>
+</html>
