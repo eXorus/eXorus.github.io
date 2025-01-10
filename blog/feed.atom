@@ -1,0 +1,1947 @@
+<?xml version="1.0"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <title>Blog de Vincent Dauce</title>
+    <link href="https://vincent.dauce.fr/blog" />
+    <link type="application/atom+xml" rel="self" href="https://vincent.dauce.fr/blog/feed.atom" />
+    <updated>2025-01-10T02:49:57+00:00</updated>
+    <id>https://vincent.dauce.fr/blog/feed.atom</id>
+    <author>
+        <name>Vincent Dauce</name>
+    </author>
+                <entry>
+    <id>https://vincent.dauce.fr/blog/2014-04-03-administrer-un-serveur-dedie-part-7-backup-mysql</id>
+    <link type="text/html" rel="alternate" href="https://vincent.dauce.fr/blog/2014-04-03-administrer-un-serveur-dedie-part-7-backup-mysql" />
+    <title>Administrer un serveur dédié - part 7 : Backup MySQL</title>
+    <published>2014-04-03T00:00:00+00:00</published>
+    <updated>2014-04-03T00:00:00+00:00</updated>
+    <author>
+        <name>Vincent Dauce</name>
+    </author>
+    <summary type="html">Sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder,......</summary>
+    <content type="html"><![CDATA[
+        <p>Sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, sauvegarder, …</p>
+
+<p>Et oui on ne le répétera jamais assez il faut penser à sauvegarder vos données avant tout. Le 31 mars est la journée international de la sauvegarde donc parlons en. aujourd’hui.</p>
+
+<p>La solution proposée ici est simple car nous allons sauvegarder uniquement les bases de données mais dans un prochain article nous pourrions voir comment sauvegarder directement un container. L’avantage serait de sauvegarder la base de données et les fichiers et de faciliter la restauration en cas de sinistre.</p>
+
+<p>———————————————————————————</p>
+
+<p>27/04/2014 : Ajout de l’expiration du mot de passe au bout de 100 jours pour plus de sécurité (cmd chage)</p>
+
+<p>28/05/2014 : Modification de l’offre de sauvegarde gratuite d’Online, on passe de 10Go à 100Go cool !!!</p>
+
+<p>———————————————————————————<br />
+Nous allons mettre en place dans <strong>chaque</strong> <strong>container</strong> (ayant une base de données MySQL) un script qui va lister les base de données, les sauvegarder en local et les envoyer sur le FTP offert par Online.</p>
+
+<h2>Création du compte système</h2>
+
+<p>Création et initilisation du mdp:</p>
+
+<pre><code class="language-bash">useradd -g www-data -m MySQLBackupManager
+passwd MySQLBackupManager
+chage -M 100 
+</code></pre>
+
+<p>Le compte sera MySQLBackupManager avec un mot de passe compliquée comme d’habitude 🙂</p>
+
+<p>On va nettoyer le répertoire personnelle du compte pour ne laisser que le script nécessaire et les sauvegardes locales</p>
+
+<p>Nettoyer le répertoire personnel:</p>
+
+<pre><code class="language-bash">su - MySQLBackupManager
+rm -rf /home/MySQLBackupManager
+mkdir scripts
+mkdir tmp
+mkdir logs
+mkdir backups_daily
+mkdir backups_weekly
+</code></pre>
+
+<p>Voilà tout est en place il reste le fameux scripts mais nous allons d’abord récupérer les informations nécessaires avant.</p>
+
+<p>Tout le reste se passe avec le compte MySQLBackupManager</p>
+
+<h2>Création du compte MySQL</h2>
+
+<p>Se connecter en root à MySQL:</p>
+
+<pre><code class="language-bash">mysql -h localhost -u root -p
+</code></pre>
+
+<p>Création du compte:</p>
+
+<pre><code class="language-sql">CREATE USER 'mysql-backup-manager'@'localhost' IDENTIFIED BY 'MON_PASSWORD';
+FLUSH PRIVILEGES;
+EXIT;
+</code></pre>
+
+<p>Remplacer par le mot de passe que vous souhaitez.</p>
+
+<h2>Récupérer les informations du serveur distant</h2>
+
+<p>Dans la console Online, sur la liste des serveurs sélectionner votre serveur.</p>
+
+<p>Dans l’onglet « Sauvegarde », activer le compte FTP. Online offre gratuitement un espace de stockage de <del>10Go</del> 100Go (depuis le 28/05/2014) n’est ce pas magnifique ? En plus c’est fait intelligement c’est à dire que votre serveur de backup est toujours dans un autre datacenter que votre serveur donc en cas d’accident (incendie) et bien vos données seront sauvées.</p>
+
+<p>Après l’activation récupérer :</p>
+
+<ul>
+<li>l’adresse FTP : dedibackup-dc2.online.net</li>
+<li>le login : le nom de votre serveur sd-xxxxx</li>
+<li>le mot de passe</li>
+</ul>
+
+<h2>Mise en place du script de sauvegarde</h2>
+
+<p>Récupérer le script sur mon github :</p>
+
+<p><a href="https://github.com/eXorus/eXorus/blob/master/MySQLBackupManager/MySQLBackupManager.sh" title="Afficher MySQLBackupManager.sh">MySQLBackupManager.sh</a> <a href="https://raw.github.com/eXorus/eXorus/master/MySQLBackupManager/MySQLBackupManager.sh" title="Back to MySQLBackupManager.sh">affichage brut</a>:</p>
+
+<pre><code class="language-bash">!/bin/bash
+
+#---------------------------------------------------------------#
+# Paramétrage de la connection MySQL                            #
+#---------------------------------------------------------------#
+
+#Nom de l'utilisateur qui lance le backup
+user=mysql-backup-manager
+#Machine sur laquelle on se connecte
+host=localhost
+#Mot de passe de l'utilisateur de backup
+pass=mon_mot_de_passe_system
+
+# Outil de dump
+MYSQLDUMP=mysqldump
+#Outil de check
+MYSQLCHECK=mysqlcheck
+# Options passées |  MYSQLDUMP
+OPTIONS="--add-drop-database  --add-drop-table --complete-insert --routines --triggers --max_allowed_packet=250M --force"
+
+#---------------------------------------------------------------#
+# Paramétrage de la sauvegarde                                  #
+#---------------------------------------------------------------#
+
+# Répertoire temporaire pour stocker les backups
+TEMPORAIRE="/home/MySQLBackupManager/tmp"
+
+# Nom du serveur
+MACHINE="$(hostname)"
+
+# Date jour
+DATE_DAILY="$(date +"%Y-%m-%d")"
+#Retention des sauvegardes journalières
+DAILY_RETENTION=15
+
+# Date semaine
+DATE_WEEKLY="$(date +"%U")"
+#Retention des sauvegardes hebdomadaires
+WEEKLY_RETENTION=200
+
+# Nom des fichiers de backup
+# Répertoire de destination du backup
+REP_DAILY="backups_daily"
+REP_WEEKLY="backups_weekly"
+DESTINATION_DAILY="/home/MySQLBackupManager/"$REP_DAILY
+DESTINATION_WEEKLY="/home/MySQLBackupManager/"$REP_WEEKLY
+FICHIER_BACKUP_DAILY=$MACHINE"_BACKUP_MYSQL_"$DATE_DAILY".tar.gz"
+FICHIER_BACKUP_WEEKLY=$MACHINE"_BACKUP_MYSQL_S"$DATE_WEEKLY".tar.gz"
+
+#Informations FTP
+LOGIN_FTP=sd-xxxx
+PASS_FTP=mon_mot_de_passe_ftp
+HOST_FTP=dedibackup-dc2.online.net
+FTP_DAILY=$MACHINE"/"$REP_DAILY
+FTP_WEEKLY=$MACHINE"/"$REP_WEEKLY
+
+#---------------------------------------------------------------#
+# Process de sauvegarde                                         #
+#---------------------------------------------------------------#
+# Création du répertoire temporaire
+if [ -d $TEMPORAIRE ];
+then
+  echo "Le repertoire "$TEMPORAIRE" existe.";
+else
+  mkdir $TEMPORAIRE;
+  echo "Création du repertoire "$TEMPORAIRE".";
+fi
+
+# On construit la liste des bases de données
+BASES="$(mysql -u $user -h $host -p$pass -Bse 'show databases')"
+
+# On lance le dump des bases
+for db in $BASES
+do
+  if [ $db != "information_schema" ]; then
+    #On lance un check et une analyse pour chaque base de données
+    $MYSQLCHECK -u $user -h $host -p$pass -c -a $db
+    # On lance un mysqldump pour chaque base de données
+    $MYSQLDUMP -u $user -h $host -p$pass $OPTIONS $db -R &gt; $TEMPORAIRE"/"$MACHINE"-"$db"-"$DATE_DAILY".sql";
+  fi
+done
+
+# Création du répertoire de destination journalier
+if [ -d $DESTINATION_DAILY ];
+then
+  echo "Le repertoire "$DESTINATION_DAILY" existe.";
+else
+  mkdir $DESTINATION_DAILY;
+  echo "Création du repertoire "$DESTINATION_DAILY".";
+fi
+
+# Création de l'archive contenant tout les dump
+#Cette archive est stockée dans le dossier défini pour la sauvegarde
+cd $TEMPORAIRE
+tar -cvzf $DESTINATION_DAILY"/"$FICHIER_BACKUP_DAILY *
+
+# Création du répertoire de destination semaine
+if [ -d $DESTINATION_WEEKLY ];
+then
+  echo "Le repertoire "$DESTINATION_WEEKLY" existe.";
+else
+  mkdir $DESTINATION_WEEKLY;
+  echo "Création du repertoire "$DESTINATION_WEEKLY".";
+fi
+
+#Copie de la sauvagarde semaine
+if [ -f $DESTINATION_WEEKLY"/"$FICHIER_BACKUP_WEEKLY  ];
+then
+    echo "La sauvegarde "$DESTINATION_WEEKLY"/"$FICHIER_BACKUP_WEEKLY" existe.";
+else
+    echo "Création de la sauvegarde "$DESTINATION_WEEKLY"/"$FICHIER_BACKUP_WEEKLY".";
+    cp $DESTINATION_DAILY"/"$FICHIER_BACKUP_DAILY $DESTINATION_WEEKLY"/"$FICHIER_BACKUP_WEEKLY
+fi
+
+# On supprime le fichier
+find $DESTINATION_DAILY -type f -mtime +$DAILY_RETENTION | xargs -r rm
+find $DESTINATION_WEEKLY -type f -mtime +$WEEKLY_RETENTION | xargs -r rm
+
+# On transfere l'archive par FTP
+lftp $HOST_FTP&lt;&lt;SCRIPTFTP
+user $LOGIN_FTP $PASS_FTP
+mirror -R $DESTINATION_DAILY"/" $FTP_DAILY"/"
+mirror -R $DESTINATION_WEEKLY"/" $FTP_WEEKLY"/"
+du -hs /
+bye
+SCRIPTFTP
+
+# On suprime le répertoire temporaire
+if [ -d $TEMPORAIRE ]; then
+  rm -Rf $TEMPORAIRE
+fi
+</code></pre>
+
+<p>Récupérer, Déposer et donner les droits:</p>
+
+<pre><code class="language-bash">cd /home/MySQLBackupManager/scripts
+wget https://raw.githubusercontent.com/eXorus/eXorus/master/MySQLBackupManager/MySQLBackupManager.sh
+chmod 700 MySQLBackupManager.sh
+vi MySQLBackupManager.sh
+</code></pre>
+
+<p>On récupère le script on ajout les droits uniquement pour le compte MySQLBackupManager et ensuite on l’édite pour modifier quelques informations :</p>
+
+<ul>
+<li>user /host / pass : pour se connecter à la machine ici nous sommes en local c’est donc plus simple mais ca fonctionne aussi avec un serveur distant</li>
+<li>LOGIN_FTP / PASS_FTP / HOST_FTP : pour se connecter au serveur distant (FTP) qui va récupérer les sauvegardes</li>
+</ul>
+
+<p>C’est tout.</p>
+
+<p>Pour que le script fonctionne nous devons installer 2 outils :</p>
+
+<ul>
+<li>aptitude install cron : pour automatiser la sauvegarde</li>
+<li>aptitude install lftp : pour faire du ftp sur le serveur distant</li>
+</ul>
+
+<p>Ensuite nous devons configurer le cron (tâche planifiée qui va s’exécuter tous les jours à 4h du matin)</p>
+
+<p>Crontab:</p>
+
+<pre><code class="language-bash">crontab -e
+        0 4 * * * /home/MySQLBackupManager/scripts/MySQLBackupManager.sh &gt;&gt;/home/MySQLBackupManager/logs/MySQLBackupManager.log
+</code></pre>
+
+<p>Vous pouvez tester le script manuellement la première fois pour vérifier que tout fonctionne correctement :</p>
+
+<p>Tester le script manuellement:</p>
+
+<pre><code class="language-bash">./MySQLBackupManager
+</code></pre>
+
+<p>Et vérifier avec les logs que tout se passe bien.</p>
+
+<h2>Quoi sauvegarder ?</h2>
+
+<p>Voilà nos sauvegardes MySQL sont en place reste juste à indiquer les bases à sauvegarder. Pour cela il suffit de donner au compte mysql-backup-manager les droits suffisants.</p>
+
+<p>Se connecter en root à MySQL:</p>
+
+<pre><code class="language-bash">mysql -h localhost -u root -p
+</code></pre>
+
+<p>Activer la sauvegarde de la BDD mydatabase:</p>
+
+<pre><code class="language-sql">GRANT SELECT , INSERT , LOCK TABLES ON `mydatabase` . * TO 'mysql-backup-manager'@'localhost';
+FLUSH PRIVILEGES;
+EXIT:
+</code></pre>
+
+<p>A reproduire sur toutes les bases à sauvegarder. J’ai mis à jour le post concernant la <a href="http://vincent.dauce.fr/administrer-un-serveur-dedie-part-6-espace-web/" title="Administrer un serveur dédié – part 6 : Espace Web">création d’un espace web</a> pour l’activer par défaut.</p>
+
+<h2>Sauvegarde sur le FTP</h2>
+
+<p>Sur le FTP Online vous retrouverez la structure suivante :</p>
+
+<ul>
+<li>[CT101]
+
+<ul>
+<li>backups_daily
+
+<ul>
+<li>CT101_BACKUP_MYSQL_2014-01-28.tar.gz</li>
+<li>CT101_BACKUP_MYSQL_2014-01-29.tar.gz</li>
+<li>…</li>
+</ul></li>
+<li>backups_weekly
+
+<ul>
+<li>CT101_BACKUP_MYSQL_S04.tar.gz</li>
+<li>CT101_BACKUP_MYSQL_S05.tar.gz</li>
+<li>…</li>
+</ul></li>
+</ul></li>
+<li>[CT102]
+
+<ul>
+<li>backups_daily
+
+<ul>
+<li>…</li>
+</ul></li>
+<li>backups_weekly
+
+<ul>
+<li>…</li>
+</ul></li>
+</ul></li>
+</ul>
+
+<p>C’est largement suffisant pour avoir toujours la bonne sauvegarde au bon moment. Attention vous êtes limités à 100 fichiers sur le serveur FTP d’Online.</p>
+
+<p>Dernière chose il faut penser à vérifier le lendemain que votre sauvegarde a bien fonctionner et essayer de la restaurer dans une base de données vide et voir que les données ne sont pas corrompues sinon tout le travail ci-dessous n’aura servi à rien.</p>
+
+<p>« Save today, Tomorrow is too late »</p>
+    ]]></content>
+</entry>
+            <entry>
+    <id>https://vincent.dauce.fr/blog/2014-03-08-php-securite-faille-xss</id>
+    <link type="text/html" rel="alternate" href="https://vincent.dauce.fr/blog/2014-03-08-php-securite-faille-xss" />
+    <title>Php Sécurité – Découverte de la faille XSS et comment s&#039;en protéger</title>
+    <published>2014-03-08T00:00:00+00:00</published>
+    <updated>2014-03-08T00:00:00+00:00</updated>
+    <author>
+        <name>Vincent Dauce</name>
+    </author>
+    <summary type="html">Nous allons étudier dans cet article la faille Cross-Site Scripting (XSS) et apprendre à s’en protéger.
+
+
+
+Cette faille est la plus importante après les injections SQL que nous avons déjà étudié. Donc il est nécessaire de la connaitre pour......</summary>
+    <content type="html"><![CDATA[
+        <p>Nous allons étudier dans cet article la faille <a href="http://fr.wikipedia.org/wiki/Cross-site_scripting">Cross-Site Scripting</a> (XSS) et apprendre à s’en protéger.</p>
+
+<h2>Introduction</h2>
+
+<p>Cette faille est la plus importante <a href="http://vincent.dauce.fr/php-securite-injection-sql/" title="Php Sécurité – Découverte des Injections SQL et comment s’en protéger">après les injections SQL que nous avons déjà étudié</a>. Donc il est nécessaire de la connaitre pour s’en protéger.</p>
+
+<p>Le principe de cette faille est d’injecter des données spécifiques sur un site web. Celui-ci va l’afficher sans en contrôler la nature et provoquer une importante faille à tous les visiteurs qui l’afficherons.</p>
+
+<h2>———————————————————————————</h2>
+
+<p>07/06/2014 : Ajout du lien vers le XSS Game à la fin</p>
+
+<h2>———————————————————————————</h2>
+
+<h2>Découverte de la faille</h2>
+
+<h3>Exemple 1 : Avec du code HTML (XSS stocké ou permanent)</h3>
+
+<p>Sur la page d’inscription je saisi mon login avec du code HTML :</p>
+
+<pre><code class="language-bash">&lt;strong&gt;eXorus&lt;/strong&gt;
+</code></pre>
+
+<p>La faille va se voir quand je vais me connecter car le site non protégé affiche mon login sans le traiter donc je vais voir mon login en gras : <strong>eXorus</strong></p>
+
+<p>Et les autres utilisateurs le verront aussi par exemple sur le forum ou l’on affiche le nom de l’auteur d’un post, toujours en gras.</p>
+
+<p>Dans ce cas c’est pas très méchant et ca peut même être jolie si on décide de mettre du code HTML avec du CSS pour avoir de la couleur, …</p>
+
+<h3>Exemple 2 : Avec du code Javascript (XSS réfléchi ou non permanent)</h3>
+
+<p>Imaginons un forum avec des posts sur plusieurs pages, quand je clique sur page suivante j’ai des URL de type :</p>
+
+<p>http://www.monforum.fr/informatique?p=1</p>
+
+<p>http://www.monforum.fr/informatique?p=2</p>
+
+<p>http://www.monforum.fr/informatique?p=3</p>
+
+<p>Sur chaque page on m’indique que je suis sur la page 1 ou 2 ou 3 … mais cette donnée n’est pas protégée donc si je change moi même la valeur de la variable p dans l’URL la faille va se voir. Par exemple :</p>
+
+<pre><code class="language-bash">http://www.monforum.fr/informatique?p=&lt;script type="text/javascript"&gt;alert('Faille');&lt;/script&gt;
+</code></pre>
+
+<p>Quand je vais aller sur cette URL comme on affiche la variable p sans la protéger je vais avoir une popup Javascript qui va m’afficher « Faille ». Encore une fois on est pas très méchant et en plus l’attaquant va s’attaquer lui même car personne n’ira jamais sur cette URL … quoi que ça arrive des fois 🙂 c’est pour ca qu’il faut éviter de suivre les URL qu’on nous donne sans y réfléchir.</p>
+
+<p>Conclusion</p>
+
+<p>Dans les 2 exemples ci-dessous nous avons été très gentil mais nous pouvons faire beaucoup plus de dégats par exemple au lieu simplement d’afficher un texte avec une couleur ou d’afficher une popup Javascript on peut rediriger le visiteur vers un site pirate qui imitera la site attaqué avec le même design. Donc le visiteur ne verra pas qu’il a changé de site et ensuite tout peut arriver.</p>
+
+<p>Reprenons l’exemple 1 en plus méchant :</p>
+
+<ol>
+<li>Je m’inscris sur un forum http://forum.fr avec le login :</li>
+</ol>
+
+<pre><code class="language-bash">&lt;script type=”text/javascript”&gt;window.location.href=”http://forumpirate.fr/login";&lt;/script&gt;
+</code></pre>
+
+<ol>
+<li>Je vais écrire un premier post sur le forum intéressant pour toucher le plus de personnes possibles</li>
+<li>Toutes les personnes qui vont voir mon post vont voir mon login et donc le Javascript va s’exécuter pour les rediriger vers la page http://forumpirate.fr/login</li>
+<li>Sur ce nouveau forum pirate que j’ai créé moi même j’ai reproduit à l’identique le site initial http://forum.fr</li>
+<li>Donc le visiteur ne va pas comprendre pourquoi il est déconnecté tout d’un coup en voulant lire un post intéressant mais il va pas chercher plus loin et il va saisir son login et mot de passe sur le forum pirate</li>
+<li>Sur mon forum pirate le login et le mot de passe seront récupérés pour être sauvegardé dans ma base en clair pour pouvoir les lire et les utiliser contre eux</li>
+</ol>
+
+<p>Dans le même genre mais au lieu de rediriger vers un site pirate on redirigerais sur une autre page du forum qui serait accessible uniquement aux administrateurs du forum comme une page pour supprimer un post.</p>
+
+<p>L’URL pour supprimer un post est http://forum.fr/post-delete.php?id=66</p>
+
+<p>Mais cette URL n’est autorisé que pour les comptes administrateurs donc si je suis un pirate et que je veux supprimer le post 66 il suffit de m’inscrire sur le forum avec le login :</p>
+
+<pre><code class="language-bash">&lt;script type=”text/javascript”&gt;window.location.href=”http://forum.fr/post-delete.php?id=66";&lt;/script&gt;
+</code></pre>
+
+<p>Ecrire un nouveau post dans le forum et espérer qu’un administrateur passe. Pour les utilisateurs normaux ils seront redirigés vers l’URL mais comme ils n’ont pas les droits ça mettra un message d’erreur mais pour l’administrateur ça supprimera le post.</p>
+
+<h2>Protection</h2>
+
+<p>La protection est simple : <strong>Never Trust User Input (Ne jamais faire confiance aux données des utilisateurs)</strong></p>
+
+<ul>
+<li>Le risque de cette faille est uniquement lors de l’affichage donc il faut nettoyer la donnée à afficher avant de l’afficher.</li>
+<li>Nettoyer la donnée une seule fois</li>
+<li>Valider les données lors de la récupération :
+
+<ul>
+<li>Limiter les caractères autorisés pour un login (alphanumérique)</li>
+<li>Contrôler la forme d’une adresse mail (xxx@xxx.xxx)</li>
+<li>Limiter le nombre de caractères un prénom de 200 caractères est ce que ça existe ?</li>
+<li>Un chiffre est un chiffre donc ne pas permettre de mettre des lettres</li>
+<li>…</li>
+</ul></li>
+</ul>
+
+<pre><code class="language-php">$userInput = '&lt;strong&gt;eXorus&lt;/strong&gt;';
+
+// [Faille XSS] Affiche eXorus en gras
+echo $userInput;
+
+// [XSS Sécurisé] Affiche &lt;strong&gt;eXorus&lt;/strong&gt;
+echo htmlspecialchars($userInput, ENT_QUOTES);
+</code></pre>
+
+<p>L’unique méthode magique à utiliser en PHP pour se protéger des failles XSS est <a href="http://www.php.net/manual/fr/function.htmlspecialchars.php">htmlspecialchars()</a> avec le paramètre ENT_QUOTES qui convertit les guillemets simples en plus.</p>
+
+<h2>Comment ça fonctionne ?</h2>
+
+<p>Si tu affiches du code HTML, CSS ou Javascript il sera interprété par le navigateur du visiteur. Pour éviter cela on affiche les caractères qui ont des significations spéciales en HTML/CSS et Javascript sous forme d’entités HTML.</p>
+
+<p>Pour le code ci-dessous dans le navigateur nous allons voir :</p>
+
+<p><strong>eXorus</strong></p>
+
+<p>&lt;strong&gt;eXorus&lt;/strong&gt;</p>
+
+<p>et dans le code source nous allons voir :</p>
+
+<p>&lt;strong&gt;eXorus&lt;/strong&gt;</p>
+
+<p>&amp;lt;strong&amp;gt;eXorus&amp;lt;/strong&amp;gt;</p>
+
+<p>De cette manière le code HTML/CSS et Javascript s’affiche proprement dans le navigateur sans être interprété (ce que nous recherchons).</p>
+
+<p>Et merci à l’auteur ci-dessous qui m’a donné envie d’écrire sur cette faille :</p>
+
+<p>Source (English) : <a href="http://www.sunnytuts.com/article/preventing-cross-site-scripting-xss">http://www.sunnytuts.com/article/preventing-cross-site-scripting-xss</a></p>
+
+<p>Pour finir je vous laisse vous entrainer sur un XSS Game : <a href="https://xss-game.appspot.com/">https://xss-game.appspot.com/</a></p>
+    ]]></content>
+</entry>
+            <entry>
+    <id>https://vincent.dauce.fr/blog/2014-03-08-vpmel-mon-premier-projet-open-source</id>
+    <link type="text/html" rel="alternate" href="https://vincent.dauce.fr/blog/2014-03-08-vpmel-mon-premier-projet-open-source" />
+    <title>Mon premier projet Open Source php-mime-mail-parser</title>
+    <published>2014-03-08T00:00:00+00:00</published>
+    <updated>2014-03-08T00:00:00+00:00</updated>
+    <author>
+        <name>Vincent Dauce</name>
+    </author>
+    <summary type="html">Contrairement aux autres articles celui ci sera moins technique, je vais vous raconter une histoire comment j’ai créé mon premier projet Open Source php-mime-mail-parser.
+
+Ce projet m’a permis pour la première fois de :
+
+
+Partager mon code et......</summary>
+    <content type="html"><![CDATA[
+        <p>Contrairement aux autres articles celui ci sera moins technique, je vais vous raconter une histoire comment j’ai créé mon premier projet Open Source <a href="https://github.com/eXorus/php-mime-mail-parser">php-mime-mail-parser</a>.</p>
+
+<p>Ce projet m’a permis pour la première fois de :</p>
+
+<ul>
+<li>Partager mon code et obtenir des retours</li>
+<li>Utiliser GitHub pour distribuer mon code</li>
+<li>Mettre en place des tests unitaires</li>
+<li>Mettre en place un package avec Composer</li>
+</ul>
+
+<h2>Histoire</h2>
+
+<p>A mon travail nous utilisions <a href="www.yopmail.com">www.yopmail.com</a> pour se créer des adresses mails fictives sans avoir à créer de compte et en pouvant quand même lire les emails. Comme tous les développeurs Web, quand il s’agit de tester un site il faut créer plusieurs comptes, vérifier les emails de confirmation de compte, les emails de commandes, … et yopmail est bien pratique pour ca.</p>
+
+<p>Mais nous avions un problème, c’est que les automates qui effectuaient les tests automatisés la nuit était pris pour des robots malveillants donc Yopmail affichait des <a href="http://fr.wikipedia.org/wiki/CAPTCHA">captchas</a> et donc on se retrouvait avec des tests en erreur le matin.</p>
+
+<p>Curieux comme je suis j’ai voulu comprendre comment Yopmail fonctionnait et si il était possible de reproduire ce système. Je suis entrée dans le monde des mails et du parsing 🙂</p>
+
+<p>Après ma petite analyse j’ai compris qu’il me fallait :</p>
+
+<ul>
+<li>Un serveur mail (Postfix) pour recevoir les mails et les envoyer sur un script PHP</li>
+<li>Un script PHP pour parser le mail et l’insérer dans une base de données en récupérant :
+
+<ul>
+<li>l’expéditeur</li>
+<li>le destinataire</li>
+<li>le titre</li>
+<li>le corps du mail format texte et html</li>
+<li>les fichiers attachés</li>
+<li>…</li>
+</ul></li>
+<li>Une application Web pour visualiser les mails en base de données</li>
+</ul>
+
+<p>Le plus compliqué fut le script pour parser un mail en PHP et c’est là que j’ai découvert <a href="https://code.google.com/p/php-mime-mail-parser/">php-mime-mail-parser</a></p>
+
+<p>Projet Open Source sur Google Code qui semblait correspondre à mes attentes. J’ai donc commencé à télécharger cette classes PHP pour l’utiliser dans mon application Web. Mon application a commencé à être utilisée par les équipes de tests à mon boulot et les anomalies sont arrivées essentiellement sur le parsing.</p>
+
+<p>Comme le code de cette classe était complexe (ie : il fallait connaitre les <a href="http://fr.wikipedia.org/wiki/Multipurpose_Internet_Mail_Extensions">standards des mails</a>) je me contentais bien souvent d’essayer de trouver le correctif dans les commentaires <a href="https://code.google.com/p/php-mime-mail-parser/issues/list">des anomalies de cette classe</a>.</p>
+
+<p>Au bout d’un moment ça commençait à être vraiment complexe je modifiait toujours le même fichier car il y en a qu’un, les gens parlaient de ligne à modifier mais comme c’était pas la première modification ça correspondait plus et puis je ne savais jamais si un correctif n’entraînait pas d’autres régressions ou écrasait un correctif que j’avais mis en place quelques semaine plus tôt.</p>
+
+<p>C’était le bordel et ça ne pouvait plus continuer comme ça surtout pour quelqu’un qui prône la Qualité dans son boulot.</p>
+
+<h2>La naissance d’un fork</h2>
+
+<p>La solution créer un fork sur GitHub qui est la plateforme à la mode pour partager son code. Ma méthode pour résoudre ma problématique :</p>
+
+<ul>
+<li>Créer un bug sur GitHub quand je constate un problème</li>
+<li>Créer un test unitaire qui reproduit ce bug</li>
+<li>Corriger le bug</li>
+<li>Relancer mes tests unitaires pour voir que tout est vert</li>
+<li>Commit</li>
+</ul>
+
+<p>J’ai donc téléchargé à nouveau le code du projet, je l’ai déposé sur Github et j’ai commencé à lire tous les bugs sur Google Code pour essayer de les reproduire.</p>
+
+<p>Voici donc le bébé sur GitHub : <a href="https://github.com/eXorus/php-mime-mail-parser">eXorus/php-mime-mail-parser</a></p>
+
+<p>A ce jour il y a plus de 20 tests vérifiant 53 assertions, j’en suis fier. Merci à Juan Treminio qui m’a permis d’apprendre les tests unitaires sous PHP avec son article <a href="https://jtreminio.com/2013/03/unit-testing-tutorial-introduction-to-phpunit/">Unit Testing Tutorial</a> en 6 parties.</p>
+
+<h2>La contribution</h2>
+
+<p>La première fois que l’on reçoit une contribution sur un projet Open Source est indescriptible, c’était il y a 5 mois avec le message suivant :</p>
+
+<blockquote>
+  <p>Over the last few months, I've tested around 10 PHP email parsing solutions. eXorus, you've nailed it! My assessment is that your modifications to MimeMailParser.class.php have made it the most effective php email parser around in terms of performance, foreign character encoding, attachment handling, and ease of use (once MailParse is installed).</p>
+  
+  <p>I've reposted your code with nothing but minor formatting and syntax tweaks. Ignore if you wish :)</p>
+</blockquote>
+
+<p>J’étais heureux et fier que l’on trouve mon projet intéressant. Ça reste un petit projet mais de temps en temps je reçois des modifications à effectuer ou des forks qui se créés à partir de mon code. J’essaye de regarder si il y a des bonnes idées à reprendre on ne sait jamais.</p>
+
+<h2>Distribuer mon package</h2>
+
+<p>La mode est d’utiliser <a href="https://getcomposer.org/">Composer</a> pour distribuer des packages PHP donc j’ai proposé mon package sur <a href="https://packagist.org/packages/exorus/php-mime-mail-parser">Packagist</a> pour faciliter son utilisation.</p>
+
+<p>Et a ce jour le package a été installé 455 fois dont 61 fois sur le dernier mois. Un petit succès pour moi.</p>
+
+<h2>La suite</h2>
+
+<p>Il reste des contributions à traiter et vérifier, rendre le code plus propre et respectueux des standards PHP.</p>
+
+<p>Etudier comment fonctionne les releases pour éviter de toujours développer sur la branche master.</p>
+
+<p>Et surement plein d’autres choses, mais avant tout il faut du temps.</p>
+    ]]></content>
+</entry>
+            <entry>
+    <id>https://vincent.dauce.fr/blog/2014-03-03-php-securite-injection-sql</id>
+    <link type="text/html" rel="alternate" href="https://vincent.dauce.fr/blog/2014-03-03-php-securite-injection-sql" />
+    <title>Php Sécurité – Découverte des Injections SQL et comment s’en protéger</title>
+    <published>2014-03-03T00:00:00+00:00</published>
+    <updated>2014-03-03T00:00:00+00:00</updated>
+    <author>
+        <name>Vincent Dauce</name>
+    </author>
+    <summary type="html">Nous allons étudier dans cet article les injections SQL et apprendre à s’en protéger.
+
+
+
+Cette faille est la plus importante et celle que nous connaissons le mieux. Mais avant avant de parler des failles plus complexe comme XSS vérifions que vous......</summary>
+    <content type="html"><![CDATA[
+        <p>Nous allons étudier dans cet article les <a href="http://fr.wikipedia.org/wiki/Injection_SQL">injections SQL</a> et apprendre à s’en protéger.</p>
+
+<h2>Introduction</h2>
+
+<p>Cette faille est la plus importante et celle que nous connaissons le mieux. Mais avant avant de parler <a href="http://vincent.dauce.fr/php-securite-faille-xss/" title="Php Sécurité – Découverte de la faille XSS et comment s’en protéger">des failles plus complexe comme XSS</a> vérifions que vous avez déjà une base en sécurité. Nous allons étudier les impacts de cette faille, la comprendre et enfin s’en protéger.</p>
+
+<p>Cette faille se situe entre l’application et sa base de données, le principe est d’envoyer une requête non prévue par le développeur pour compromettre la sécurité d’une application.</p>
+
+<h2>Découverte de la faille</h2>
+
+<h3>Exemple 1 : Se connecter en tant qu’administrateur sans connaitre le mot de passe</h3>
+
+<p>Imaginer le code suivant pour vous connecter à votre site :</p>
+
+<pre><code class="language-php">$login = $_POST['login'];
+$password = $_POST['password'];
+
+$result = mysql_query("SELECT user_id FROM users WHERE login = '".$login."' AND password = '".$password."'");
+</code></pre>
+
+<p>La requête devrait fonctionner uniquement si le login et le mot de passe sont correcte mais c’est pas le cas. Pour l’instant notre requête ressemblerait à çà :</p>
+
+<pre><code class="language-sql">SELECT user_id FROM users WHERE login = 'admin' AND password = 'azerty'
+</code></pre>
+
+<p>Mais nous pouvons utiliser une injection SQL pour se connecter sans mot de passe avec n’importe quel login.</p>
+
+<p>Avec le login suivant : admin’–</p>
+
+<p>et n’importe quel mot de passe car de toute manière il ne sera pas pris en compte la requête devient :</p>
+
+<pre><code class="language-sql">SELECT user_id FROM users WHERE login = 'admin'--' AND password = 'azerty'
+
+--Equivalent à
+SELECT user_id FROM users WHERE login = 'admin'
+</code></pre>
+
+<p>Les caractères « — » sont interprétés en SQL comme le début d’un commentaire donc comme vous pouvez le voir ci-dessus la requête SQL n’a plus le sens que l’on souhaitait. Elle vérifie le login mais plus le mot de passe donc il suffit d’avoir le login d’une personne pour se connecter. Facile !!!</p>
+
+<h3>Exemple 2 : Supprimer des données</h3>
+
+<p>Imaginons maintenant une page d’un blog http://monblog.fr/view.php?id=66 avec le code PHP suivant :</p>
+
+<pre><code class="language-php">$id = $_GET['id'];
+
+$result = mysql_query("SELECT post_text FROM posts WHERE post_id = '".$id."'");
+</code></pre>
+
+<p>On pourrait penser que le risque est faible par rapport à notre premier exemple. Au pire le pirate pourra lire un autre post sur le blog et bien non. Si on change l’URL pour http://monblog.fr/view.php?id=65′;DROP TABLE posts;–</p>
+
+<p>Ça va lire le post 65 mais en même temps supprimer la table avec tous les posts … bye bye le blog j’espère que vous avez des sauvegardes régulières.</p>
+
+<p>La requête attendue est :</p>
+
+<pre><code class="language-sql">SELECT post_text FROM posts WHERE post_id = '66'
+</code></pre>
+
+<p>La requête obtenue ou plutôt les requêtes obtenues sont :</p>
+
+<pre><code class="language-sql">SELECT post_text FROM posts WHERE post_id = '65';DROP TABLE posts;--'
+</code></pre>
+
+<p>Donc comme nous avons pu le voir tous les caractères spécifiques à SQL doivent être protégés :</p>
+
+<ul>
+<li>« — » : qui permet de commenter tous ce qui est après</li>
+<li>« ; » : qui permet d’exécuter plusieurs requêtes les unes après les autres</li>
+</ul>
+
+<h2>Protection</h2>
+
+<p>La protection est simple : <strong>Never Trust User Input (Ne jamais faire confiance aux données des utilisateurs)</strong></p>
+
+<p>Avant il fallait utiliser des fonctions spécifiques à PHP (mysql_real_escape_string ou caster avec int) pour échapper les caractères mais ça c’était avant. Maintenant que l’extension mysql_* est obsolète vous devez utiliser PDO pour interagir avec une base de donnée.</p>
+
+<p><a href="http://fr2.php.net/manual/fr/class.pdo.php">L’extension PDO</a> permet de gérer l’échappement des caractères pour protéger vos requêtes SQL des pirates à travers les requêtes préparées.</p>
+
+<p>Si on revient sur nos 2 exemples ci-dessous nous devrions écrire les requêtes de cette manière :</p>
+
+<pre><code class="language-php">$login = $_POST['login'];
+$password = $_POST['password'];
+
+$query = $pdo-&gt;prepare("SELECT user_id FROM users WHERE login = :login AND password = :password ");
+
+$query-&gt;bindValue(':login', $login, PDO::PARAM_STR);
+$query-&gt;bindValue(':password', $password, PDO::PARAM_STR);
+
+$query-&gt;execute();
+</code></pre>
+
+<p>Ou pour le second exemple :</p>
+
+<pre><code class="language-php">$id = $_GET['id'];
+
+$query = $pdo-&gt;prepare("SELECT post_text FROM posts WHERE post_id = :post_id");
+
+$query-&gt;bindValue(':post_id', $id, PDO::PARAM_INT);
+
+$query-&gt;execute();
+</code></pre>
+
+<p>La requête SQL est écrite avec des labels commençant par « : ». Ensuite vous assignez des valeurs aux labels en indiquant le type des données :</p>
+
+<ul>
+<li>PARAM_STR pour une chaîne de caractères</li>
+<li>PARAM_INT pour un entier</li>
+<li>… <a href="http://www.php.net/manual/fr/pdo.constants.php">pour la liste exhaustive</a></li>
+</ul>
+
+<h2>Comment ça fonctionne ?</h2>
+
+<p>Toutes les requêtes préparées écrites avec PDO sont sécurisées car l’objectif de ces requêtes est justement de séparer les données de la structure de la requête.</p>
+
+<p>Attention de bien utiliser les bindValue pour les paramètres de vos requêtes sinon vous ne serez pas protégé.</p>
+
+<p>Attention sur les caractères « % » et « _ » ne sont pas échappés donc dans le cas d’une requête avec LIKE comme opérateur si la variable comprend un des 2 caractères il sera transmis tel quel à la BDD.</p>
+
+<p>Pour aller plus loin avec PDO je vous invite à lire le <a href="http://fmaz.developpez.com/tutoriels/php/comprendre-pdo/">tuto de Francois Mazerolle sur developpez</a></p>
+
+<p>Merci à l’auteur ci-dessous qui m’a donnée envie d’écrire cette série d’article :</p>
+
+<p>Source (English) : <a href="http://www.sunnytuts.com/article/php-security-sql-injection">http://www.sunnytuts.com/article/php-security-sql-injection</a></p>
+    ]]></content>
+</entry>
+            <entry>
+    <id>https://vincent.dauce.fr/blog/2014-02-15-administrer-un-serveur-dedie-part-6-espace-web</id>
+    <link type="text/html" rel="alternate" href="https://vincent.dauce.fr/blog/2014-02-15-administrer-un-serveur-dedie-part-6-espace-web" />
+    <title>Administrer un serveur dédié - part 6 : Espace Web</title>
+    <published>2014-02-15T00:00:00+00:00</published>
+    <updated>2014-02-15T00:00:00+00:00</updated>
+    <author>
+        <name>Vincent Dauce</name>
+    </author>
+    <summary type="html">Vous souhaitez installer Prestashop, WordPress ou créer votre site de A à Z ? et bien il vous faut un espace web que l’on va créer maintenant.
+
+Le socle est présent puisque dans l’article précédent nous avons terminé l’installation du......</summary>
+    <content type="html"><![CDATA[
+        <p>Vous souhaitez installer Prestashop, WordPress ou créer votre site de A à Z ? et bien il vous faut un espace web que l’on va créer maintenant.</p>
+
+<p>Le socle est présent puisque dans l’article précédent nous avons terminé l’installation du serveur Web.</p>
+
+<p>Cette procédure est à répéter autant de fois que vous voulez, par exemple pour ma part j’ai :</p>
+
+<ul>
+<li>Ce blog bien sur : <a href="http://vincent.dauce.fr/">http://vincent.dauce.fr</a></li>
+<li>La marque de mon amie avec :
+
+<ul>
+<li>un site : <a href="http://www.sage-et-sauvage.fr">http://www.sage-et-sauvage.fr</a></li>
+<li>un blog : <a href="http://blog.sage-et-sauvage.fr/">http://blog.sage-et-sauvage.fr</a></li>
+<li>une boutique en ligne : <a href="http://shop.sage-et-sauvage.fr/">http://shop.sage-et-sauvage.fr</a></li>
+</ul></li>
+<li>Le site d’une association : <a href="http://www.actessen.fr/">http://www.actessen.fr</a></li>
+<li>Le site d’une yourte : <a href="http://yourteauborddeleau.com/">http://yourteauborddeleau.com</a></li>
+</ul>
+
+<p>———————————————————————————</p>
+
+<p>27/04/2014 : Ajout de l’expiration du mot de passe au bout de 100 jours pour plus de sécurité (cmd chage)</p>
+
+<p>29/06/2014 : Ajout de « Configurer le container avec un nom de domaine »</p>
+
+<p>———————————————————————————</p>
+
+<h2>Accès Web et SFTP</h2>
+
+<p>Pour créer un hébergement comme j’utilise le mode userdir, on commence par ajouter un compte « blogtuto » dans le groupe www-data (group d’Apache)</p>
+
+<p>Ajouter un compte:</p>
+
+<pre><code class="language-bash">useradd -g www-data -m blogtuto
+passwd blogtuto
+chage -M 100 blogtuto
+chown -R root:www-data /home/blogtuto/
+chmod -R 750 /home/blogtuto/
+chown -R blogtuto:www-data /home/blogtuto/www/
+chmod -R 750 /home/blogtuto/www/
+</code></pre>
+
+<p>Avec ces quelques commande plein de choses sont faites :</p>
+
+<ul>
+<li>Création d’un compte</li>
+<li>Modification du mot de passe (pour en mettre un compliqué : 50 caractères avec majuscules, minuscules, chiffres et caractères spéciaux)</li>
+<li>Création d’un répertoire personnel /home/blogtuto avec
+
+<ul>
+<li>/home/blogtuto/logs pour stocker les logs apache</li>
+<li>/home/blogtuto/www pour stocker les fichiers web</li>
+</ul></li>
+<li>Création d’une page web de bienvenue : index.html dans le dossier www</li>
+<li>Mise à jour des droits pour autoriser Apache à servir les pages et le compte blogtuto à les modifier via le SFTP.</li>
+</ul>
+
+<p>On peut déjà se connecter sur le SFTP (sftp://CT101_IP_PUBLIC:SSH_PORT) et modifier la page index.html ou créer des nouveaux fichiers dans le dossier www mais il n’est toujours pas possible de voir la page index.html car nous ne l’avons pas autorisé.</p>
+
+<p>vi /etc/apache2/apache2.conf:</p>
+
+<pre><code class="language-bash">UserDir enabled blogtuto
+</code></pre>
+
+<p>La ligne est à rajouter juste après « UserDir /home/*/www », un espace doit séparer chaque compte donc à la fin on peut avoir des choses comme ca :</p>
+
+<p>Configuration UserDir:</p>
+
+<pre><code class="language-bash"># Configuration du module UserDir
+UserDir disabled
+UserDir /home/*/www
+UserDir enabled blogtuto blogtuto2 blogtuto3
+</code></pre>
+
+<p>Et recharger la configuration apache2</p>
+
+<p>Recharger apache:</p>
+
+<pre><code class="language-bash">service apache2 reload
+</code></pre>
+
+<p>Saisir http://CT101_IP_PUBLIC/~blogtuto dans votre navigateur préféré et vous devriez voir la page index.html.</p>
+
+<h2>Accès MySQL</h2>
+
+<p>On se connecte avec le compte root et le mot de passe que vous avez mis dans l’article précédent :</p>
+
+<p>Création d'un accès MySQL:</p>
+
+<pre><code class="language-bash">mysql -h localhost -u root -p
+mysql &gt; create database blogtutoDB;
+mysql &gt; grant all privileges on blogtutoDB.* to blogtuto@localhost identified by 'mypasswd';
+mysql &gt; flush privileges;
+mysql &gt; exit;
+</code></pre>
+
+<p>Avec ces commandes nous avons créé une nouvelle base de données blogtutoDB et avons attribués tous les droits sur cette base uniquement à un nouvel utilisateur blogtuto que nous créons avec le mot de passe passwd.</p>
+
+<p>Si vous avez déjà mis en place les sauvegardes MySQL avec le tuto <a href="http://vincent.dauce.fr/administrer-un-serveur-dedie-part-7-backup-mysql/" title="Administrer un serveur dédié – part 7 : Backup MySQL">Administrer un serveur dédié – part 7 : Backup MySQL</a>, pensez à rajouter les droits pour la sauvegarde automatique entre le grant initial et le flush privileges :</p>
+
+<p>Ajouter la sauvegarde de la base en automatique:</p>
+
+<pre><code class="language-sql">GRANT SELECT , INSERT , LOCK TABLES ON `blogtutoDB` . * TO 'mysql-backup-manager'@'localhost';
+</code></pre>
+
+<h2>Configurer le container avec un nom de domaine</h2>
+
+<p>Une bonne pratique à avoir est de rajouter le nom de domaine dans le fichier host du container. Pour cela vous devez juste rajouter « blogtuto.com » sur la première ligne du fichier host après localhost :</p>
+
+<p>vi /etc/hosts
+Vous pouvez rajouter autant de domaines que vous le souhaitez séparé par des espaces.</p>
+
+<h2>Configurer le virtual host Apache avec un nom de domaine</h2>
+
+<p>La méthode de userdir est sympathique quand on a pas nom de domaine mais quand on en a un alors il faut configurer Apache pour reconnaître ce domaine et rediriger vers la bonne home.</p>
+
+<p>Il faut donc créer un virtual host (nouveau fichier)</p>
+
+<p>vi /etc/apache2/sites-available/01-blogtuto.com:</p>
+
+<pre><code class="language-bash">&lt;VirtualHost *:80&gt;
+        ServerAdmin blogtuto@localhost
+        ServerName www.blogtuto.com
+        ServerAlias blogtuto.com
+
+        DocumentRoot /home/blogtuto/www
+        &lt;Directory /home/blogtuto/www&gt;
+                Options None
+                AllowOverride None
+        &lt;/Directory&gt;
+
+        ErrorLog /home/blogtuto/logs/error.log
+
+        # Possible values include: debug, info, notice, warn, error, crit,
+        # alert, emerg.
+        LogLevel warn
+
+        CustomLog /home/blogtuto/logs/access.log combined
+
+&lt;/VirtualHost&gt;
+</code></pre>
+
+<p>Et pour le coup il y a du travail car beaucoup de configuration à faire et à expliquer.</p>
+
+<p>Déjà le nom du fichier « 01-blogtuto.com » c’est une convention personnel :</p>
+
+<ul>
+<li>On commence par 01, puis 02, … : Les virtual host sont pris dans l’ordre avec Apache donc si plusieurs correspondent c’est le premier qui sera pris. Donc on essaye de les classer au mieux.</li>
+<li>Ensuite blogtuto.com pour la conf du domaine blogtuto.com c’est plus facile à ce souvenir mais c’est pas nécessaire techniquement tous les fichiers sont pris par apache</li>
+</ul>
+
+<p>Pour le fichier de conf :</p>
+
+<ul>
+<li>VirtualHost *:80 : On peut avoir plusieurs balise dans un fichier mais je préfère en avoir qu’un. Ici on dit que ce virtual host écoutera sur le port 80 (http et donc pas https) sur n’importe qu’elle IP comme le container en a qu’un çà sera toujours la même mais si vous avez plusieurs IP sur le même container il faut préciser</li>
+<li><a href="http://httpd.apache.org/docs/2.2/fr/mod/core.html#ServerAdmin">ServerAdmin</a> : c’est l’adresse mail de contact qui recevra les messages d’erreurs donc mon utilisateur blogtuto@localhost</li>
+<li><a href="http://httpd.apache.org/docs/2.2/fr/mod/core.html#ServerName">ServerName</a> : La directive la plus importante qui va permettre d’identifier le virtual host à utiliser donc l’adresse la plus importante soit www.blogtuto.com ou blogtuto.com en fonction</li>
+<li><a href="http://httpd.apache.org/docs/2.2/fr/mod/core.html#ServerAlias">ServerAlias</a> : La directive alternative donc si vous avez mis www.blogtuto.com mettez blogtuto.com et inversement</li>
+<li><a href="http://httpd.apache.org/docs/2.2/fr/mod/core.html#DocumentRoot">DocumentRoot</a> : Indique la racine quand on appel http://www.blogtuto.com/index.html avec DocumentRoot = /home/blogtuto/www, Apache traduit par le fichier /home/blogtuto/www/index.html (Ne pas mettre de slash à la fin)</li>
+<li><a href="http://httpd.apache.org/docs/2.2/fr/mod/core.html#Directory">Directory</a> : On va mettre au moins une balise directory avec la même valeur que DocumentRoot et ensuite on peut rajouter d’autres si nécessaire. C’est dans cette directive qu’on va devoir mettre les configurations applicables pour un dossier/sous-dossier, … On reviendra plus tard sur les directives intéressantes à rajouter ou supprimer. On interdit tout pour le moment</li>
+<li><a href="http://httpd.apache.org/docs/2.2/fr/mod/core.html#ErrorLog">ErrorLog</a> et CustomLog : pour avoir des logs Apache dans le répertoire logs que nous avons créé. On se place au niveau warn pour recevoir un maximum d’information si on veut diagnostiquer un jour.</li>
+</ul>
+
+<p>Pour prendre en compte nos modifications il faut activer le nouveau virtual host et recharger Apache :</p>
+
+<p>Activer un site et recharger Apache:</p>
+
+<pre><code class="language-bash">a2ensite 01-blogtuto.com
+service apache2 reload
+</code></pre>
+
+<h2>Encore plus loin avec Directory</h2>
+
+<h3>AllowOverride</h3>
+
+<p>J’ai pris l’habitude de ne jamais autoriser AllowOverride donc le mettre à None pour une question de performance. Cette directive permet d’utiliser les fameux fichier .htaccess qui permette de réécrire la configuration d’Apache à la volée. Seulement voilà ça demande des ressources à Apache pour contrôler l’existence du fichier et modifier la configuration à la volée. Quand on a accès au serveur et que la configuration ne change pas souvent et qu’on a pas besoin que l’utilisateur choisisse les réglages c’est l’idéal. Si on a vraiment besoin de cet liberté alors je vous conseil de rajouter une directive très stricte. Je vous invite aussi à lire la doc Apache sur le sujet « <a href="http://httpd.apache.org/docs/2.2/fr/howto/htaccess.html#when">Quand doit-on (ne doit-on pas) utiliser les fichiers .htaccess ?</a> »</p>
+
+<p>Donc pour résumer je n’utilise pas de fichiers htaccess. Toutes les directives que je trouve dans un htaccess je le rajoute dans la configuration de mon virtual host et comme ca je profite du cache d’Apache pour une configuration qui ne change jamais ou presque.</p>
+
+<p>Pour WordPress :</p>
+
+<p>Virtual Host Apache pour WordPress:</p>
+
+<pre><code class="language-bash">&lt;Directory /home/blogtuto/www&gt;
+  Options +SymLinksIfOwnerMatch -FollowSymLinks -ExecCGI -Includes -IncludesNOEXEC -Indexes -MultiViews
+  AllowOverride None
+
+  # BEGIN WordPress
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^index\.php$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.php [L]
+  # END WordPress
+&lt;/Directory&gt;
+</code></pre>
+
+<h3>Forcer le WWW ou non</h3>
+
+<p>Il ne faut jamais que vos sites soient accessibles avec 2 URL différentes sinon les statistiques sont faussés. Donc il faut choisir entre www.blogtuto.com ou blogtuto.com.</p>
+
+<p>Pour rediriger toutes les requêtes blogtuto.com vers www.blogtuto.com :</p>
+
+<p>Forcer WWW:</p>
+
+<pre><code class="language-bash">&lt;Directory /home/blogtuto/www&gt;
+    Options +SymLinksIfOwnerMatch -FollowSymLinks -ExecCGI -Includes -IncludesNOEXEC -Indexes -MultiViews
+    AllowOverride None
+
+    # BEGIN Force WWW
+    RewriteEngine On
+    RewriteBase /
+    RewriteCond %{HTTP_HOST} ^blogtuto.com [NC]
+    RewriteRule ^(.*)$ http://www.blogtuto.com/$1 [L,R=301]
+    # END Force WWW
+&lt;/Directory&gt;
+</code></pre>
+
+<p>Et inversement si vous voulez que toutes les requêtes www.blogtuto.com redirigent vers blogtuto.com :</p>
+
+<p>Force NO WWW:</p>
+
+<pre><code class="language-bash">&lt;Directory /home/blogtuto/www&gt;
+    Options +SymLinksIfOwnerMatch -FollowSymLinks -ExecCGI -Includes -IncludesNOEXEC -Indexes -MultiViews
+    AllowOverride None
+
+    # BEGIN Force NO WWW
+    RewriteEngine On
+    RewriteBase /
+    RewriteCond %{HTTP_HOST} !^blogtuto.com [NC]
+    RewriteRule ^(.*)$ http://blogtuto.com/$1 [L,R=301]
+    # END Force NO WWW
+&lt;/Directory&gt;
+</code></pre>
+    ]]></content>
+</entry>
+            <entry>
+    <id>https://vincent.dauce.fr/blog/2014-02-10-administrer-un-serveur-dedie-part-5-serveur-web</id>
+    <link type="text/html" rel="alternate" href="https://vincent.dauce.fr/blog/2014-02-10-administrer-un-serveur-dedie-part-5-serveur-web" />
+    <title>Administrer un serveur dédié - part 5 : Serveur Web</title>
+    <published>2014-02-10T00:00:00+00:00</published>
+    <updated>2014-02-10T00:00:00+00:00</updated>
+    <author>
+        <name>Vincent Dauce</name>
+    </author>
+    <summary type="html">Dans cet article nous allons voir comment déployer un serveur web, pour cela nous avons besoin de plusieurs briques :
+
+
+Apache : c’est le serveur web par excellence qui reste encore majoritaire sur le web. Avec lui on va pouvoir servir des pages web......</summary>
+    <content type="html"><![CDATA[
+        <p>Dans cet article nous allons voir comment déployer un serveur web, pour cela nous avons besoin de plusieurs briques :</p>
+
+<ul>
+<li>Apache : c’est le serveur web par excellence qui reste encore majoritaire sur le web. Avec lui on va pouvoir servir des pages web statiques HTML/CSS</li>
+<li>Php : Le langage que j’utilises le plus pour mes sites web.</li>
+<li>MySQL : La base de données qui est aussi prédominante (WordPress, Prestashop, …)</li>
+<li>SFTP : je n’utilise pas de serveur FTP car je n’en vois pas l’intérêt quand on a déjà SSH sur la machine autant activer SFTP.</li>
+</ul>
+
+<p>Voilà bien sur on aurait pu prendre Nginx à la place d’Apache, MariaDB à la plase de MySQL, vsFTPd à la place de sftp … mais il faut faire un choix et on pourra toujours revenir dessus dans un prochain article.</p>
+
+<p>Je vous conseil de rien n’installer sur le host pour le laisser le plus propre possible et d’utiliser un container. Nous souhaitons héberger nos sites sur CT101 que nous venons de créer donc c’est partit.</p>
+
+<h2>Serveur Web – Apache</h2>
+
+<p>Installer Apache:</p>
+
+<pre><code class="language-bash">aptitude install apache2
+</code></pre>
+
+<p>Il va installer plusieurs packages car <a href="https://packages.debian.org/wheezy/apache2">apache2 est un metapaquet</a>.</p>
+
+<p>A la fin de l’installation le serveur web est lancé et fonctionnel. On peut le voir rapidement en saisissant dans votre navigateur l’adresse IP Failover de votre container qui affichera une page web. Avant on avait connexion refusée.</p>
+
+<p>Il y a aussi après le lancement un petit warning que nous allons corriger : « apache2: Could not reliably determine the server’s fully qualified domain name, using 127.0.0.1 for ServerName »</p>
+
+<p>C’est très simple pour ne plus avoir les erreurs vous devez modifier le fichier suivant et ajouter cette ligne à la fin du fichier :</p>
+
+<p>vi /etc/apache2/apache2.conf:</p>
+
+<pre><code class="language-bash">ServerName localhost
+</code></pre>
+
+<p>Vérifions aussi quelques configurations d’Apache pour voir si tout est en ordre :</p>
+
+<p>Vérifier que la configuration d’Apache (normalement c’est celle par défaut) écoute bien sur le port 80. Et aussi sur le port 443 un peu plus bas dans le cas ou on voudrait déployer du SSL ce que nous ferons bientôt pour notre cloud.</p>
+
+<p>vi /etc/apache2/ports.conf:</p>
+
+<pre><code class="language-bash">NameVirtualHost *:80
+Listen 80
+</code></pre>
+
+<p>Modifier en décommentant la ligne (supprimer le #) pour passer Apache2 en UTF-8 c’est la norme sur le web depuis quelques années maintenant et vous ne rencontrerez aucun problème en encodant tous les fichiers en UTF-8.</p>
+
+<p>vi /etc/apache2/conf.d/charset:</p>
+
+<pre><code class="language-bash">AddDefaultCharset UTF-8
+</code></pre>
+
+<p>Pour personnaliser un peu apache je vous conseil 2 modules qui sont presque indispensable pour moi :</p>
+
+<ul>
+<li><a href="http://httpd.apache.org/docs/2.2/mod/mod_rewrite.html">rewrite</a> : permet la réécriture d’URL, tous les sites l’utilisent de nos jours (au lieu d’avoir http://vincent.dauce.fr/index.php?article=1 nous avons http://vincent.dauce.fr/mon-premier-article)</li>
+<li><a href="http://httpd.apache.org/docs/current/mod/mod_userdir.html">userdir</a> : celui là est moins évident ça permet de créer un hébergement web par utilisateur. Pour chaque site hébergé sur ce serveur je vais créer un compte avec un mot de passe pour lui donner accès aux fichiers et avoir un espace web. Pour sécuriser le tout c’est moi qui l’activerait ou non par compte donc par exemple compte root n’a pas d’espace web 🙂</li>
+</ul>
+
+<p>Pour activer les 2 modules ci-dessus nous utilisons :</p>
+
+<p>Activer les modules principaux sur Apache:</p>
+
+<pre><code class="language-bash">a2enmod rewrite
+a2enmod userdir
+</code></pre>
+
+<p>Comme vu plus haut nous allons sécuriser le module userdir avec la configuration suivante (ajouter les lignes à la fin du fichier après ServerName) :</p>
+
+<p>vi /etc/apache2/apache2.conf:</p>
+
+<pre><code class="language-bash"># Configuration du module UserDir
+UserDir disabled
+UserDir /home/*/www
+</code></pre>
+
+<p>Le module userdir est ainsi désactivé et sera activé au cas par cas selon nos besoins. Et nous définissons que les pages web seront dans le répertoire /home/*/www avec * le login du compte.</p>
+
+<p>Pour vous donner une idée, si je veux héberger le site « toto.com » je vais créer un compte toto qui aura donc un répertoire personnel dans /home/toto. Si j’active pour ce compte l’espace web il pourra déposer des fichiers dans /home/toto/www et consultable via le lien CT101_IP_PUBLIC/~toto.</p>
+
+<p>Justement pour éviter d’avoir à créer à chaque fois le dossier www nous allons automatiser la création et créer un dossier logs pour stocker les fichier log d’Apache par compte.</p>
+
+<p>Automatiser la création du dossier www:</p>
+
+<pre><code class="language-bash">mkdir /etc/skel/www
+mkdir /etc/skel/logs
+echo " &lt;strong&gt;Nouvel espace web&lt;/strong&gt; " &gt; /etc/skel/www/index.html
+</code></pre>
+
+<p>Puis recharger la configuration et admirer que vous n’avez plus le message d’erreur :</p>
+
+<p>Recharger apache2:</p>
+
+<pre><code class="language-bash">service apache2 reload
+</code></pre>
+
+<h2>Serveur SQL – MySQL</h2>
+
+<p>Pour installer MySQL c’est très simple voir trop simple 🙂</p>
+
+<p>Installer MySQL:</p>
+
+<pre><code class="language-bash">aptitude install mysql-server
+</code></pre>
+
+<p>On est encore dans le cas d’un metapaquet, on valide et c’est tout.</p>
+
+<p>Je vous conseil de choisir un mot de passe complexe pour le root de MySQL, moi j’utilise 50 caractères avec majuscules, minuscules et chiffres (Pas de caractères spéciaux car j’ai souvent eu des problèmes après pour me connecter avec).</p>
+
+<p>Il existe plein de générateur de mot de passe en ligne, je vous laisse choisir votre préféré moi j’ai pas trouvé. Surement une idée d’application à faire 🙂</p>
+
+<p>Voilà le mien : a4HBSwpwdlF3LafNsPswKM6uZQWGIqrjnUGXkNcoYX3XGE5lZV</p>
+
+<p>à conserver précieusement car c’est le compte root.</p>
+
+<h2>Serveur App – PHP</h2>
+
+<p>Pour PHP aussi pas beaucoup de chose à faire (PHP 5.4) :</p>
+
+<p>Installer PHP:</p>
+
+<pre><code class="language-bash">aptitude install php5
+</code></pre>
+
+<p>Après comme pour Apache il y a des modules plus ou moins importants, voici les principaux :</p>
+
+<ul>
+<li><a href="https://packages.debian.org/wheezy/php5-mysql">php5-mysql</a> : plutôt indispensable celui là sinon comment vous connecter à MySQL que vous venez d’installer ? permet d’activer les fonctions mysql_* (ne plus les utiliser svp c’est trop horrible et obsolète depuis la version 5.5 de PHP), mysqli_* (c’est mieux mais bon) et enfin PDO (ça c’est la classe)</li>
+<li><a href="https://packages.debian.org/wheezy/php5-curl">php5-curl</a> : pour récupérer des fichiers via HTTP ou FTP</li>
+<li><a href="https://packages.debian.org/wheezy/php5-gd">php5-gd</a> : pour traiter des images (resize, traitements, …)</li>
+<li><a href="https://packages.debian.org/wheezy/php5-mcrypt">php5-mcrypt</a> : pour crypter des données sensibles</li>
+<li><a href="https://packages.debian.org/wheezy/libssh2-php">libssh2-php</a> : pour utiliser SSH dans les scripts PHP</li>
+</ul>
+
+<p><a href="http://www.prestashop.com/fr/">Prestashop</a> la boutique en ligne et open source que je vous conseil a besoin de php5-curl pour activer Paypal, php5-gd pour retailler les images, php5-mcrypt pour crypter les données sensibles et bien évidemment php5-mysql.</p>
+
+<p><a href="http://wordpress.org/">WordPress</a> le blog open source qui fait aussi CMS a besoin de libssh2-php pour pouvoir faire les mise à jour en automatique</p>
+
+<p>Pour les installer tous il suffit de lancer :</p>
+
+<p>Installer les modules PHP:</p>
+
+<pre><code class="language-bash">aptitude install php5-mysql php5-gd php5-mcrypt php5-curl libssh2-php
+</code></pre>
+
+<p>Juste après ca vous n’avez rien à faire tout est déjà fonctionnel.</p>
+
+<h2>Serveur Fichier – SFTP</h2>
+
+<p>Pour le serveur de fichier j’utilisais il y a très longtemps des serveurs FTP plus ou moins sécurisés jusqu’au jour ou j’ai découvert que SSH le faisait déjà très bien. Alors pourquoi installer un nouveau service alors qu’on en a déjà un installé et qui tourne ? en plus il y avait la gestion des comptes qui était complexe là c’est le même login et mot de passe.</p>
+
+<p>Vous allez me dire mais j’ai pas envie de donner un accès SSH à mes utilisateurs et bien non on leur donne uniquement le SFTP ils peuvent rien faire de plus c’est donc totalement sécurisé.</p>
+
+<p>Pour celà il faut juste configurer SSH pour permettre de rendre le service que l’on veut c’est à dire offrir aux utilisateurs un accès aux fichiers via un client FTP comme filezilla ou un partage de fichiers.</p>
+
+<p>Il faut donc changer la ligne « Subsystem … » (avant on avait « Subsystem sftp /usr/lib/openssh/sftp-server ») : On indique autoriser le faux shell « internal-sftp » qui va permettre d’interdire l’accès au shell pour les utilisateurs.</p>
+
+<p>Et rajouter quelques lignes après « UserPAM yes ». Pour autoriser le groupe www-data qui est celui d’Apache donc de nos sites.</p>
+
+<ul>
+<li>ChrootDirectory : les utilisateurs ne pourront pas remonter à la racine du serveur et explorer notre serveur. Ils sont bloqués dans leur dossier personnel</li>
+<li>X11Forwarding : on n’autorise pas le partage de bureau (application graphique à distance)</li>
+<li>AllowTcpForwarding : interdire aussi les tunnels SSH</li>
+<li>ForceCommand : pour forcer l’utilisation d’un faux shell et interdire donc un accès SSH</li>
+</ul>
+
+<p>vi /etc/ssh/sshd_config:</p>
+
+<pre><code class="language-bash">Subsystem sftp internal-sftp
+
+# Set this to 'yes' to enable PAM authentication, account processing,
+# and session processing. If this is enabled, PAM authentication will
+# be allowed through the ChallengeResponseAuthentication and
+# PasswordAuthentication. Depending on your PAM configuration,
+# PAM authentication via ChallengeResponseAuthentication may bypass
+# the setting of "PermitRootLogin without-password".
+# If you just want the PAM account and session checks to run without
+# PAM authentication, then enable this but set PasswordAuthentication
+# and ChallengeResponseAuthentication to 'no'.
+UsePAM yes
+    AllowGroups www-data
+    Match Group www-data
+            ChrootDirectory /home/%u
+            X11Forwarding no
+            AllowTcpForwarding no
+            ForceCommand internal-sftp
+</code></pre>
+
+<p>Reste à recharger la configuration de notre service :</p>
+
+<p>Recharger SSH:</p>
+
+<pre><code class="language-bash">service ssh reload
+</code></pre>
+
+<p>Et voilà nous avons un SFTP sécurisé accessible uniquement aux utilisateurs appartenant au groupe www-data. Pour rappel le fichier de conf a déjà été modifié pour interdire au root de pouvoir se connecter et nous avons déjà changé le port par défaut qui était à 22 pour plus de sécurité.</p>
+
+<p>Reste à rajouter des droits car sinon le SFTP interdira de se connecter.</p>
+
+<p>Droits pour SFTP:</p>
+
+<pre><code class="language-bash">chown -R root:www-data /home/
+chmod -R 750 /home/
+</code></pre>
+    ]]></content>
+</entry>
+            <entry>
+    <id>https://vincent.dauce.fr/blog/2014-02-01-administrer-un-serveur-dedie-part-4-premier-container</id>
+    <link type="text/html" rel="alternate" href="https://vincent.dauce.fr/blog/2014-02-01-administrer-un-serveur-dedie-part-4-premier-container" />
+    <title>Administrer un serveur dédié - part 4 : Premier container</title>
+    <published>2014-02-01T00:00:00+00:00</published>
+    <updated>2014-02-01T00:00:00+00:00</updated>
+    <author>
+        <name>Vincent Dauce</name>
+    </author>
+    <summary type="html">Après déjà 3 articles, nous arrivons enfin à notre premier container qui va nous permettre enfin d’héberger nos sites et rendre service, car c’est bien là le but d’un serveur rendre services aux autres.
+
+
+
+Créer un container
+
+
+
+Et voilà......</summary>
+    <content type="html"><![CDATA[
+        <p>Après déjà 3 articles, nous arrivons enfin à notre premier container qui va nous permettre enfin d’héberger nos sites et rendre service, car c’est bien là le but d’un serveur rendre services aux autres.</p>
+
+<h2>Créer le container</h2>
+
+<p>Créer un container</p>
+
+<pre><code class="language-bash">lxc-create -n CT101 -t debian
+</code></pre>
+
+<p>Et voilà c’est fait, vous avez une Debian 7.4 à jour 🙂 le mot de passe est root par défaut on le changera rapidement.</p>
+
+<p>Le nom de votre container c’est CT101 qu’on devra utiliser dans presque toutes les commandes de LXC.</p>
+
+<p>———————————————————————————</p>
+
+<p>25/05/2014 : Modification du masque réseau (/24 au lieu de rien avant)</p>
+
+<p>———————————————————————————</p>
+
+<p>Après l’installation le container est à l’arrêt donc démarrons le :</p>
+
+<p>Démarrer un container:</p>
+
+<pre><code class="language-bash">ln -s /var/lib/lxc/CT101/config /etc/lxc/auto/CT101
+lxc-start -n CT101 -d
+</code></pre>
+
+<p>La première permet de démarrer automatiquement le container à chaque fois que le host démarre. Et la seconde est pour le démarrer maintenant car on veut faire mumuse avec 🙂</p>
+
+<p>Nous allons nous connecter dessus pour commencer à l’utiliser</p>
+
+<p>Se connecter à la console du container CT101:</p>
+
+<pre><code class="language-bash">lxc-console -n CT101
+</code></pre>
+
+<p>Quand on tape cette commande la phrase « Type &lt;Ctrl+a q&gt; to exit the console, &lt;Ctrl+a Ctrl+a&gt; to enter Ctrl+a itself » s’affiche.</p>
+
+<p>Donc avec notre clavier on fait Ctrl+a puis Entrée pour voir apparaître le prompt du login et pouvoir saisir root (le mot de passe est par défaut root).</p>
+
+<p>A ce moment là vous êtes connecté à votre container, vous pouvez le voir car le prompt a changé « root@CT101:~# »</p>
+
+<p>Pour quitter le container et revenir au prompt du host il suffit de faire exit. On revient à ce moment là au prompt du login et on a plus qu’à saisir Ctrl+a puis q.</p>
+
+<p>Le prompt change de nouveau pour nous indiquer que nous sommes sur le host.</p>
+
+<p>La suite est déjà expliqué dans mon article <a href="http://vincent.dauce.fr/administrer-un-serveur-dedie-part-2-le-socle/" title="Administrer un serveur dédié – part 2 : Le socle">Administrer un serveur dédié – part 2 : Le socle</a> (Section : Premières actions et Sécuriser le service SSH)</p>
+
+<h2>Configurer le réseau sur le host</h2>
+
+<p>On va commander un IP Failover sur la console Online, sur la page <a href="https://console.online.net/fr/server/failover">Failover</a>, cliquer sur le bouton « Commander des adresses IP », sélectionner celle que vous voulez en fonction de la beauté des chiffres 🙂 et valider avec le bouton « Commander d’IP Failover »</p>
+
+<p>Après la commande on retour sur la page <a href="https://console.online.net/fr/server/failover">Failover</a> pour cette fois assigner l’IP à un serveur. Les IP disponibles sont en vert dans la liste des IP Failovers. Il suffit de glisser-déposer l’IP qu’on vient d’acheter sur le serveur que l’on souhaite. Et cliquer sur le bouton « Mise à jour ». Un récapitulatif des modifications s’affichent puis cliquer sur le bouton « Mise à jour ».</p>
+
+<p>Ma nouvelle adresse IP Failover est : CT101_IP_PUBLIC</p>
+
+<p>Dans la configuration réseau que nous allons faire nous n’avons pas besoin d’assigner une adresse mac à notre IP car l’IP bien que publique n’est pas connecté en direct mais passe par du NAT.</p>
+
+<p>On va configurer le réseau à partir du host donc déconnectez vous du container pour suivre les actions ci-dessous.</p>
+
+<p>On va commencer par déclarer notre IP en tant qu’interface réseau virtuelle sur notre host. Ces quelques lignes sont à rajouter à la fin du fichier après le bridge que nous avons créé dans l’article <a href="http://vincent.dauce.fr/administrer-un-serveur-dedie-part-3-virtualisation/" title="Administrer un serveur dédié – part 3 : Virtualisation">Administrer un serveur dédié – part 3 : Virtualisation</a></p>
+
+<p>vi /etc/network/interfaces:</p>
+
+<pre><code class="language-bash"># Failover CT101 : CT101_IP_PUBLIC
+auto eth0:x
+iface eth0:x inet static
+        address CT101_IP_PUBLIC
+        netmask 255.255.255.255
+</code></pre>
+
+<p>Il faut incrémenter le numéro x à chaque nouvelle IP. Donc eth0 est mon interface principale avec mon l’IP publique de mon serveur, eth0:0 sera l’interface virtuelle de ma première IP Failover CT101_IP_PUBLIC, eth0:1 sera l’interface virtuelle de ma seconde IP Failover CT102_IP_PUBLIC, eth0:2 sera l’interface virtuelle de ma troisième IP Failover CT103_IP_PUBLIC, … enfin on est limité à 5 par serveur chez Online.</p>
+
+<p>Le netmask est à 255.255.255.255 comme l’indique Online dans sa <a href="http://documentation.online.net/fr/serveur-dedie/reseau/ip-failover">documentation sur l’IP Failover</a>.</p>
+
+<p>Malheureusement cette configuration ne sera prise en compte qu’au prochain reboot, donc pour activer notre nouvelle interface maintenant tout de suite on exécute la commande suivante :</p>
+
+<p>Activer l'IP failover en live:</p>
+
+<pre><code class="language-bash">ifconfig eth0:x CT101_IP_PUBLIC netmask 255.255.255.255
+</code></pre>
+
+<h2>Configurer le réseau sur le container</h2>
+
+<p>On reste sur le host pour configurer le réseau du container c’est plus simple car on est déjà dessus. Mais c’est possible de le faire aussi en étant connecté sur le container.</p>
+
+<p>Il s’agit donc ici de définir un réseau local entre notre container et le bridge.</p>
+
+<p>Le fichier existe déjà avec l’interface local et l’interface eth0 que l’on va remplacer.</p>
+
+<p>Nos modifications sont les suivantes :</p>
+
+<ul>
+<li>On ne touche pas à la boucle local</li>
+<li>L’interface principale passe en mode manuel (dhcp vers static), c’est à dire qu’on va spécifier les informations au lieu de laisser les serveurs DHCP faire le boulot
+
+<ul>
+<li>address : IP privée de notre container (j’utilise toujours 192.168.0.xxx avec xxx le même numéro que le nom de mon container donc CT101 est sur l’IP privée 192.168.0.101 c’est plus facile à retenir). Il faut rajouter le masque réseau /24 indiquant que la boucle local est sur le dernier chiffre de l’IP (ou alors /16 pour indiquer que c’est les 2 derniers chiffres à prendre en compte)</li>
+<li>broadcast : La même que ci-dessus avec un 255 à la fin</li>
+<li>gateway : C’est l’IP privée de mon bridge que nous avons définit dans l’article précédent (address sur l’interface br0)</li>
+</ul></li>
+</ul>
+
+<p>vi /var/lib/lxc/CT101/rootfs/etc/network/interfaces:</p>
+
+<pre><code class="language-bash">auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet static
+        address 192.168.0.101
+        netmask 255.255.255.0
+        broadcast 192.168.0.255
+        gateway 192.168.0.1
+</code></pre>
+
+<p>Il y a aussi le fichier de configuration LXC pour le container en question à modifier. Le fichier permet de configurer des tas de choses mais nous allons nous concentrer uniquement sur le réseau. Normalement les directives ci-dessous n’existent pas donc ajouter les à la fin du fichier :</p>
+
+<p>vi /var/lib/lxc/CT101/config:</p>
+
+<pre><code class="language-bash"># Network
+lxc.network.type = veth
+lxc.network.flags = up
+lxc.network.link = br0
+lxc.network.name = eth0
+lxc.network.ipv4 = 192.168.0.101/24
+lxc.network.veth.pair = vethCT101
+</code></pre>
+
+<p>On indique à LXC comment traiter le réseau de notre container :</p>
+
+<ul>
+<li>lxc.network.type : lxc permet d’avoir différent types de réseaux (phys, vlan, …) nous on a choisir veth c’est à dire l’utilisation d’un bridge que nous lui indiquerons dans la directive lxc.network.link</li>
+<li>lxc.network.flags : On le met à « up » pour activer le réseau</li>
+<li>lxc.network.link : on vient de dire à LXC de traiter le réseau avec un bridge on lui indique ici le nom de l’interface que nous avons mis dans /etc/network/interface du host</li>
+<li>lxc.network.name : on utilise l’interface eth0 de notre container, celle que nous venons de configurer ci-dessus avec l’IP 192.168.0.101</li>
+<li>lxc.network.ipv4 : cette fois c’est notre IP privée</li>
+<li>lxc.network.veth.pair : c’est le nom que nous donnons au lien, cf l’image de notre réseau dans l’article précédent</li>
+</ul>
+
+<h2>Configurer le firewall</h2>
+
+<p>Maintenant que notre réseau est configuré nous allons devoir faire quelques mises à jours sur notre firewall :</p>
+
+<ul>
+<li>NAT : c’est à dire transformer tous les flux qui sortent de notre container avec l’IP 192.168.0.101 par CT101_IP_PUBLIC et inversement</li>
+<li>Autoriser les flux en fonction des services que l’on proposera dans notre container</li>
+</ul>
+
+<p>Modifier le firewall que nous avons mis en place dans <a href="http://vincent.dauce.fr/administrer-un-serveur-dedie-part-2-le-socle/" title="Administrer un serveur dédié – part 2 : Le socle">Administrer un serveur dédié – part 2 : Le socle</a> (Mise en place d’un firewall)</p>
+
+<p>Pour rajouter les 2 lignes suivantes : déclaration de l’IP publique et privée de notre container CT101.</p>
+
+<p>vi /etc/init.d/firewall.sh:</p>
+
+<pre><code class="language-bash">HN_IP="xx.xx.xx.xx"
+
+CT101_IP_PRIVATE="192.168.0.101"
+CT101_IP_PUBLIC="CT101_IP_PUBLIC"
+
+##########################
+# Start the Firewall rules
+##########################
+</code></pre>
+
+<p>Et et un peu plus loin entre le bloc « Autoriser HTTP et HTTPS » et la fin du bloc fw_start() :</p>
+
+<p>vi /etc/init.d/firewall.sh:</p>
+
+<pre><code class="language-bash"># Autoriser HTTP et HTTPS
+iptables -t filter -A OUTPUT -p tcp --dport $HTTP_PORT -j ACCEPT
+iptables -t filter -A INPUT -p tcp --dport $HTTP_PORT -j ACCEPT
+iptables -t filter -A OUTPUT -p tcp --dport $HTTPS_PORT -j ACCEPT
+iptables -t filter -A INPUT -p tcp --dport $HTTPS_PORT -j ACCEPT
+
+# CT101 : Configuration NAT
+iptables -A FORWARD -s $CT101_IP_PRIVATE -j ACCEPT
+iptables -A FORWARD -d $CT101_IP_PRIVATE -j ACCEPT
+iptables -t nat -A POSTROUTING -s $CT101_IP_PRIVATE -j SNAT --to $CT101_IP_PUBLIC
+# CT101 : Autoriser HTTP
+iptables -t nat -I PREROUTING -p tcp -d $CT101_IP_PUBLIC --dport $HTTP_PORT -j DNAT --to $CT101_IP_PRIVATE
+iptables -I FORWARD -p tcp -d $CT101_IP_PRIVATE --dport $HTTP_PORT
+# CT101 : Autoriser SSH
+iptables -t nat -I PREROUTING -p tcp -d $CT101_IP_PUBLIC --dport $SSH_PORT -j DNAT --to $CT101_IP_PRIVATE
+iptables -I FORWARD -p tcp -d $CT101_IP_PRIVATE --dport $SSH_PORT
+
+}
+fw_stop(){
+</code></pre>
+
+<p>Il reste à relancer le firewall pour prise en compte des nouvelles règles :</p>
+
+<p>Relancer le firewall:</p>
+
+<pre><code class="language-bash">firewall.sh restart
+</code></pre>
+
+<p>Et relancer le container pour prendre en compte les changements réseaux et de configuration LXC :</p>
+
+<p>Relancer le container:</p>
+
+<pre><code class="language-bash">lxc-stop -n CT101
+lxc-list
+lxc-start -n CT101 -d
+</code></pre>
+
+<p>Et voilà, vous avez un container qui a accès à internet et qui peut héberger un serveur web par exemple 🙂</p>
+
+<p>Ha on me dit que c’est dans le prochain article donc je vous laisse.</p>
+
+<p>Vous pouvez répéter ce tuto autant de fois que vous voulez de container.</p>
+    ]]></content>
+</entry>
+            <entry>
+    <id>https://vincent.dauce.fr/blog/2014-01-25-administrer-un-serveur-dedie-part-3-virtualisation</id>
+    <link type="text/html" rel="alternate" href="https://vincent.dauce.fr/blog/2014-01-25-administrer-un-serveur-dedie-part-3-virtualisation" />
+    <title>Administrer un serveur dédié - part 3 : Virtualisation</title>
+    <published>2014-01-25T00:00:00+00:00</published>
+    <updated>2014-01-25T00:00:00+00:00</updated>
+    <author>
+        <name>Vincent Dauce</name>
+    </author>
+    <summary type="html">On va passer à la virtualisation, c’est à la mode et c’est super efficace. L’objectif est d’avoir avec un serveur plusieurs serveurs.
+
+Avant j’utilisais la solution OpenVZ mais depuis Debian Wheezy la solution préconisée est LXC même si......</summary>
+    <content type="html"><![CDATA[
+        <p>On va passer à la virtualisation, c’est à la mode et c’est super efficace. L’objectif est d’avoir avec un serveur plusieurs serveurs.</p>
+
+<p>Avant j’utilisais la solution OpenVZ mais depuis Debian Wheezy la solution préconisée est LXC même si elle ne semble pas encore très mature elle fonctionne parfaitement.</p>
+
+<p>Les avantages de LXC par rapport à OpenVZ c’est :</p>
+
+<ul>
+<li>Le noyau qui est « mainline » donc pas besoin de le patcher comme pour OpenVZ, c’est juste un package Debian comme les autres</li>
+<li>C’est forcément le future, bien que pas totalement mature pour le moment il va devenir une référence plus tard</li>
+<li>OpenVZ même si il est gratuit est maintenu par une société Parallels qui vent des solutions de virtualisation</li>
+</ul>
+
+<p>Voici donc l’architecture qu’on va mettre en place :</p>
+
+<ul>
+<li>On va installer LXC sur notre serveur (host)</li>
+<li>On va créer plusieurs containers (ie serveurs) pour différents usages:
+
+<ul>
+<li>CT101 : Container pour héberger les sites internet en production</li>
+<li>CT102 : Container pour héberger mes sites personnels (ma vie privée)</li>
+<li>CT103 : Container pour héberger mes sites en développements</li>
+</ul></li>
+</ul>
+
+<p>On va devoir configurer un réseau pour que notre host redirige les flux entrants et sortants vers le bon container. Pour cela on va s’appuyer sur des IP Failover que propose Online. Ces IP que tu loues à l’unité vont te permettre de faire croire au monde entier que tu as plusieurs serveurs.</p>
+
+<p>Le host aura 2 IP, une IP publique HN&#95;IP et une privée 192.168.0.1 pour dialoguer avec les autres containers</p>
+
+<p>Le CT101 aura aussi 2 IP, une IP publique (failover) CT101&#95;IP&#95;PUBLIC et une privée 192.168.0.101.</p>
+
+<p>Même chose pour CT102, CT103, ….</p>
+
+<h2>Installation de LXC</h2>
+
+<p>C’est très facile il suffit de lancer la commande et on demandera uniquement de valider le répertoire. On va laisser celui par défaut c’est à dire /var/lib/lxc</p>
+
+<p>Installer LXC:</p>
+
+<pre><code class="language-bash">aptitude install lxc bridge-utils libvirt-bin debootstrap
+</code></pre>
+
+<p>LXC a besoin de <a href="http://fr.wikipedia.org/wiki/Cgroups">cgroups</a> pour limiter les ressources du serveur sur chaque container donc on va l’activer :</p>
+
+<p>Activer cgroups:</p>
+
+<pre><code class="language-bash">echo "cgroup /sys/fs/cgroup cgroup defaults 0 0" &gt;&gt; /etc/fstab
+mount /sys/fs/cgroup
+</code></pre>
+
+<p>La première ligne permet de l’activer par défaut au démarrage du serveur et la seconde permet de l’activer maintenant.</p>
+
+<p>Enfin il faut vérifier que l’installation de LXC est bonne et vérifier le résultat de la commande checkconfig</p>
+
+<p>Vérifier l'installation de LXC:</p>
+
+<pre><code class="language-bash">lxc-checkconfig
+</code></pre>
+
+<h2>Modification du réseau</h2>
+
+<p>Surement la partie la plus dure car il y a plusieurs méthodes possible.</p>
+
+<p>Après l’installation d’une Debian vous devriez avoir le réseau configuré de cette manière :</p>
+
+<p>Réseau par défaut:</p>
+
+<pre><code class="language-bash"># The loopback network interface
+auto lo
+iface lo inet loopback
+
+# The primary network interface
+allow-hotplug eth0
+iface eth0 inet dhcp
+</code></pre>
+
+<p>A modifier par :</p>
+
+<p>vi /etc/network/interfaces:</p>
+
+<pre><code class="language-bash"># The loopback network interface
+auto lo
+iface lo inet loopback
+
+# The primary network interface
+auto eth0
+iface eth0 inet static
+       address xx.xx.xx.xx
+       netmask 255.255.255.0
+       network xx.xx.xx.0
+       broadcast xx.xx.xx.255
+       gateway xx.xx.xx.1
+       post-up echo 1 &gt; /proc/sys/net/ipv4/ip_forward
+
+# The bridge network interface
+auto br0
+iface br0 inet static
+       address 192.168.0.1
+       netmask 255.255.255.0
+       bridge_ports none
+       bridge_stp off
+       bridge_fd 0
+       bridge_maxwait 5 
+</code></pre>
+
+<p>Une petite explication s’impose avant on avait un réseau avec 2 interfaces :</p>
+
+<ul>
+<li>La boucle local pour que le serveur se parle à lui même (localhost)</li>
+<li>L’interface principal avec notre IP publique que nous récupérons directement des serveurs DHCP d’Online.</li>
+</ul>
+
+<p>Nos modifications sont les suivantes :</p>
+
+<ul>
+<li>On ne touche pas à la boucle local</li>
+<li>L’interface principale passe en mode manuel (dhcp vers static), c’est à dire qu’on va spécifier les informations au lieu de laisser les serveurs DHCP faire le boulot
+
+<ul>
+<li>address : IP publique de votre serveur (disponible sur le panel Online)</li>
+<li>network : La même que ci-dessus avec un 0 à la fin</li>
+<li>broadcast : La même que ci-dessus avec un 255 à la fin cette fois</li>
+<li>gateway : La même que ci-dessus avec un 1 à la fin cette fois</li>
+<li>ip_forward : permet d’activer l’IP Forwarding ca va nous servir pour nos containers</li>
+</ul></li>
+<li>On rajoute une interface bridge, en gros un switch sur lequel on va connecter les autres containers.
+
+<ul>
+<li>address : c’est l’IP privée de notre host</li>
+</ul></li>
+</ul>
+
+<p><a href="http://vincent.dauce.fr/wp-content/uploads/2014/02/lxc-veth.png"><img src="http://vincent.dauce.fr/wp-content/uploads/2014/02/lxc-veth-300x167.png" alt="lxc-veth" /></a></p>
+
+<p>Pour le moment nous avons mis en place que l’interface eth0 et br0 sur le host. Nous verrons dans un prochain article l’interface vethCT101 connecté avec l’interface eth0 du container en question.</p>
+
+<p>Un très bon tuto de Albin Kauffman (d’où j’ai repris l’image en l’adaptant à ma terminologie) :</p>
+
+<p><a href="http://www.linuxembedded.fr/2013/07/configuration-reseau-de-lxc/">http://www.linuxembedded.fr/2013/07/configuration-reseau-de-lxc/</a></p>
+
+<p>Merci à lui.</p>
+
+<h2>Quelques commandes avec LXC</h2>
+
+<p>Lister les containers:</p>
+
+<pre><code class="language-bash">lxc-list
+</code></pre>
+
+<p>Démarrer le container CT101:</p>
+
+<pre><code class="language-bash">lxc-start -n CT101 -d
+</code></pre>
+
+<p>Se connecter sur le container CT101:</p>
+
+<pre><code class="language-bash">lxc-console -n CT101
+</code></pre>
+
+<p>Il y a visiblement plusieurs méthodes (« lxc-halt -n CT101 » ou « lxc-stop -n CT101 ») pour arrêter un container mais elles ne sont pas dès plus douces. La solution la plus propre consiste à se connecter dessus à l’arrêter puis à dire à LXC de la stopper.</p>
+
+<p>Arrêter le container CT101:</p>
+
+<pre><code class="language-bash">#HOST&gt; lxc-console -n CT101
+#CT101&gt; init 0
+#HOST&gt; lxc-stop -n CT101
+</code></pre>
+
+<p>Supprimer le container CT101:</p>
+
+<pre><code class="language-bash">lxc-destroy -n CT101
+</code></pre>
+    ]]></content>
+</entry>
+            <entry>
+    <id>https://vincent.dauce.fr/blog/2014-01-20-administrer-un-serveur-dedie-part-2-le-socle</id>
+    <link type="text/html" rel="alternate" href="https://vincent.dauce.fr/blog/2014-01-20-administrer-un-serveur-dedie-part-2-le-socle" />
+    <title>Administrer un serveur dédié - part 2 : Le socle</title>
+    <published>2014-01-20T00:00:00+00:00</published>
+    <updated>2014-01-20T00:00:00+00:00</updated>
+    <author>
+        <name>Vincent Dauce</name>
+    </author>
+    <summary type="html">Après cette petite introduction, nous allons réellement commencer l’installation.
+
+
+
+On va dans cet article voir comment utiliser l’interface Online qui est très intuitive donc vous devriez pas avoir besoin de moi. Puis configurer la Debian pour......</summary>
+    <content type="html"><![CDATA[
+        <p>Après cette petite introduction, nous allons réellement commencer l’installation.</p>
+
+<h2>Mes choix</h2>
+
+<p>On va dans cet article voir comment utiliser l’interface Online qui est très intuitive donc vous devriez pas avoir besoin de moi. Puis configurer la Debian pour la sécuriser un peu avant de l’utiliser plus que ça.</p>
+
+<p>Pourquoi une Debian ? car j’ai toujours aimé cette distribution qui est très stable, qui est la maman de beaucoup d’autres distribution avec une philosophie très appréciable ( non commerciale, collaborative et qui sort pas tous les 6 mois mais quand elle est prête). Donc un très bon choix pour un serveur qui se doit d’être sécurisé avec des mises à jours de sécurité très régulières.</p>
+
+<p>———————————————————————————</p>
+
+<p>27/04/2014 : Ajout de l’expiration du mot de passe au bout de 100 jours pour plus de sécurité (cmd chage)</p>
+
+<p>22/06/2014 : Coquille sur update-rc.d qui prend uniquement le nom du fichier en paramètre et pas le chemin qui est toujours /etc/init.d</p>
+
+<p>———————————————————————————</p>
+
+<h2>Installation du serveur via la panel Online</h2>
+
+<p>Tout d’abord il faut se connecter à l’interface qui est d’ailleurs super bien faite contrairement à celle d’OVH je trouve.</p>
+
+<p><a href="https://console.online.net">https://console.online.net</a></p>
+
+<p>Dans le menu <strong>Serveur &gt; Liste de vos serveurs</strong> choisir celui que vous venez de commander et cliquer dessus.</p>
+
+<p>Cliquer sur le bouton <strong>Installer</strong> à droite dans le menu.</p>
+
+<p>Choisir <strong>Distributions serveur &gt; Debian 7 64 bits</strong></p>
+
+<p>Laisser le <strong>partitionnement par défaut</strong>, nous serons donc en RAID1 soit une bonne sécurité car 2 disques durs et les données sont en double. Si un disque dur lâche, Online se charge de le changer et comme ça aucune perte de données et encore moins d’interruption de service.</p>
+
+<p>On conserve le nom de la machine Online, on <strong>choisit un mot de passe pour le root</strong> et un mot de passe pour un compte utilisateur. Pas d’inquiétude on le changera tout à l’heure.</p>
+
+<p>Puis valider les dernières étapes et <strong>attendre 1h que l’installation se termine</strong> correctement avant de vous connecter dessus pour la première fois sur votre nouveau serveur dédié.</p>
+
+<h2>Première actions</h2>
+
+<p>Comme je le disais précédemment on va commencer par changer les mots de passe car on ne sait jamais le mot de passe qu’on a mit la première fois c’était sur internet donc c’est pas sûr. Commande à utiliser pour le compte root et le compte utilisateur créé précédemment. On rajoute une expiration du mot de passe à 100 jours pour améliorer la sécurité.</p>
+
+<p>Mettre à jour les mots de passe:</p>
+
+<pre><code class="language-bash">passwd root
+chage -M 100 root
+</code></pre>
+
+<p>Ensuite on passe à la mise à jour de notre Debian, comme il y en a régulièrement il faut le faire. On verra plus tard comment l’automatiser. Par la même occasion vous remarquez qu’on utilise toujours « aptitude » au lieu « apt-get » pour la gestion des paquets sous Debian car c’est celui qui est <a href="http://www.debian.org/doc/manuals/debian-faq/ch-pkgtools.fr.html#s-aptitude">recommandé</a>. (Si aptitude n’est pas installé il suffit de faire « apt-get install aptitude »)</p>
+
+<p>Première mise à jour:</p>
+
+<pre><code class="language-bash">aptitude update
+aptitude upgrade
+</code></pre>
+
+<p>J’ai pris l’habitude de supprimer les services inutiles pour mes besoins car si on a moins de service alors on a plus de performance et moins de faille de sécurité.</p>
+
+<p>Pour le moment la liste se compose de :</p>
+
+<ul>
+<li>telnet (protocole de communication assez ancien que je n’utilise pas)</li>
+<li>exim4 (agent de transport de courrier mais pas necessaire dans mon cas)</li>
+</ul>
+
+<p>Supprimer les services inutiles:</p>
+
+<pre><code class="language-bash">aptitude remove telnet
+service exim4 stop
+update-rc.d -f exim4 remove
+rm /etc/init.d/exim4
+aptitude purge exim4
+</code></pre>
+
+<h2>Sécuriser le service SSH</h2>
+
+<p>Le service SSH est la première cible des attaques et le seul accès à votre serveur donc il faut le sécuriser un maximum pour éviter de se faire attaquer.</p>
+
+<p>Si vous me croyez pas il suffit d’aller voir les logs après l’installation de votre serveur dans /var/log/auth.log.</p>
+
+<p>On change le port par défaut car la plupart des robots utilise 22 pour essayer des milliards de login et password. On interdit au root de se connecter en SSH, ca veut dire qu’on sera toujours obligé de se connecter avec un compte utilisateur puis le compte root et on autorise au cas par cas les comptes. Ça permet d’éviter les robots qui utilisent root comme login. Les 2 dernières directives sont normalement déjà en place sur Debian 7.</p>
+
+<p>vi /etc/ssh/sshd_config:</p>
+
+<pre><code class="language-bash">Port xxxx (le modifier pour ne pas utiliser le port par défaut 22)
+PermitRootLogin no
+AllowUsers monlogin
+PermitEmptyPasswords no
+Protocol 2
+</code></pre>
+
+<p>Puis on relance le service pour prendre en compte la nouvelle configuration. Comme nous n’avons pas encore mis en place un firewall vous devriez pouvoir encore vous connecter dessus 🙂</p>
+
+<p>Relancer le service SSH:</p>
+
+<pre><code class="language-bash">service ssh reload
+</code></pre>
+
+<h2>Mise en place d’un firewall</h2>
+
+<p>Un firewall permet de contrôler les flux réseaux entrants et sortants de votre serveur. Il est primordial d’en avoir un et qu’il soit le plus restrictif possible, si votre machine héberge uniquement un serveur web alors on autorise uniquement le HTTP, ….</p>
+
+<p>La mise en place est assez simple on va écrire un script qui sera exécuté à chaque démarrage du serveur et qui va inscrire les règles que l’on souhaite grâce à un logiciel bien connu dans le monde linux: iptables</p>
+
+<p>Il suffit juste de mettre votre IP au niveau de la variable HN_IP et de bien préciser le port SSH (le même que celui au dessus) dans la variable SSH_PORT:</p>
+
+<pre><code class="language-bash">#!/bin/sh
+#
+# Simple Firewall configuration.
+#
+# Author: eXorus
+#
+# chkconfig: 2345 9 91
+# description: Activates/Deactivates the firewall at boot time
+#
+### BEGIN INIT INFO
+# Provides:          firewall.sh
+# Required-Start:    $syslog $network
+# Required-Stop:     $syslog $network
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start firewall daemon at boot time
+# Description:       Custom Firewall script
+### END INIT INFO
+
+##########################
+# Configuration
+##########################
+
+SSH_PORT="xxxx"
+FTP_PORT="21"
+DNS_PORT="53"
+MAIL_PORT="25"
+NTP_PORT="123"
+HTTP_PORT="80"
+HTTPS_PORT="443"
+
+HN_IP="xx.xx.xx.xx"
+
+
+##########################
+# Start the Firewall rules
+##########################
+
+fw_start(){
+        # Ne pas casser les connexions etablies
+        iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+        iptables -A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+        # Autoriser loopback
+        iptables -t filter      -A INPUT        -i lo -s 127.0.0.0/8 -d 127.0.0.0/8 -j ACCEPT
+        iptables -t filter      -A OUTPUT       -o lo -s 127.0.0.0/8 -d 127.0.0.0/8 -j ACCEPT
+
+        # Autoriser le ping
+        iptables -t filter      -A INPUT        -p icmp -j ACCEPT
+        iptables -t filter      -A OUTPUT       -p icmp -j ACCEPT
+
+        # Autoriser SSH
+        iptables -t filter      -A INPUT        -p tcp --dport $SSH_PORT -j ACCEPT
+        iptables -t filter      -A OUTPUT       -p tcp --dport $SSH_PORT -j ACCEPT
+
+        # Autoriser NTP
+        iptables -t filter      -A OUTPUT       -p udp --dport $NTP_PORT -j ACCEPT
+
+        # Autoriser DNS
+        iptables -t filter -A OUTPUT -p tcp --dport $DNS_PORT -j ACCEPT
+        iptables -t filter -A OUTPUT -p udp --dport $DNS_PORT -j ACCEPT
+        iptables -t filter -A INPUT -p tcp --dport $DNS_PORT -j ACCEPT
+        iptables -t filter -A INPUT -p udp --dport $DNS_PORT -j ACCEPT
+
+        # Autoriser HTTP et HTTPS
+        iptables -t filter -A OUTPUT -p tcp --dport $HTTP_PORT -j ACCEPT
+        iptables -t filter -A INPUT -p tcp --dport $HTTP_PORT -j ACCEPT
+        iptables -t filter -A OUTPUT -p tcp --dport $HTTPS_PORT -j ACCEPT
+        iptables -t filter -A INPUT -p tcp --dport $HTTPS_PORT -j ACCEPT
+
+}
+
+fw_stop(){
+        # Vidage des tables et des regles personnelles
+        iptables -t filter      -F
+        iptables -t nat         -F
+        iptables -t mangle      -F
+        iptables -t filter      -X
+
+        # Interdire toutes connexions entrantes et sortantes
+        iptables -t filter      -P INPUT DROP
+        iptables -t filter      -P FORWARD DROP
+        iptables -t filter      -P OUTPUT DROP
+}
+fw_clear(){
+        # Vidage des tables et des regles personnelles
+        iptables -t filter      -F
+        iptables -t nat         -F
+        iptables -t mangle      -F
+        iptables -t filter      -X
+
+        # Accepter toutes connexions entrantes et sortantes
+        iptables -t filter      -P INPUT ACCEPT
+        iptables -t filter      -P FORWARD ACCEPT
+        iptables -t filter      -P OUTPUT ACCEPT
+}
+
+fw_stop_ip6(){
+        # Vidage des tables et des regles personnelles
+        ip6tables -t filter     -F
+        ip6tables -t mangle     -F
+        ip6tables -t filter     -X
+
+                # Interdire toutes connexions entrantes et sortantes
+        ip6tables -t filter     -P INPUT DROP
+        ip6tables -t filter     -P FORWARD DROP
+        ip6tables -t filter     -P OUTPUT DROP
+}
+
+fw_clear_ip6(){
+        # Vidage des tables et des regles personnelles
+        ip6tables -t filter      -F
+        ip6tables -t mangle      -F
+        ip6tables -t filter      -X
+
+        # Accepter toutes connexions entrantes et sortantes
+        ip6tables -t filter      -P INPUT ACCEPT
+        ip6tables -t filter      -P FORWARD ACCEPT
+        ip6tables -t filter      -P OUTPUT ACCEPT
+}
+
+case "$1" in
+        start|restart)
+                echo -n "Starting firewall.."
+                fw_stop_ip6
+                fw_stop
+                fw_start
+                echo "done."
+                ;;
+        stop)
+                echo -n "Stopping firewall.."
+                fw_stop_ip6
+                fw_stop
+                echo "done."
+                ;;
+        clear)
+                echo -n "Clearing firewall rules.."
+                fw_clear_ip6
+                fw_clear
+                echo "done."
+                ;;
+        *)
+                echo "Usage: $0 {start|stop|restart|clear}"
+                exit 1
+                ;;
+esac
+
+exit 0
+</code></pre>
+
+<p>Pour tester le script il suffit de le lancer une première fois et vérifier que tout fonctionne. Si c’est pas le cas redémarrer le serveur pour y avoir accès de nouveau.</p>
+
+<p>Relancer le firewall:</p>
+
+<pre><code class="language-bash">firewall.sh start
+</code></pre>
+
+<p>Après l’avoir validé, il faut que le script se lance à chaque fois que le serveur démarre :</p>
+
+<p>Relancer le firewall automatiquement:</p>
+
+<pre><code class="language-bash">chmod +x /etc/init.d/firewall.sh
+chown root:root /etc/init.d/firewall.sh
+update-rc.d firewall.sh defaults
+</code></pre>
+    ]]></content>
+</entry>
+            <entry>
+    <id>https://vincent.dauce.fr/blog/2014-01-15-administrer-un-serveur-dedie-part-1-introduction</id>
+    <link type="text/html" rel="alternate" href="https://vincent.dauce.fr/blog/2014-01-15-administrer-un-serveur-dedie-part-1-introduction" />
+    <title>Administrer un serveur dédié - part 1 : Introduction</title>
+    <published>2014-01-15T00:00:00+00:00</published>
+    <updated>2014-01-15T00:00:00+00:00</updated>
+    <author>
+        <name>Vincent Dauce</name>
+    </author>
+    <summary type="html">L’idée de départ pour ce blog était de partager mon expérience pour administrer un serveur dédié, donc commençons par là.
+
+J’ai depuis de nombreuses années maintenant une dédibox pour héberger mes sites internet que je change......</summary>
+    <content type="html"><![CDATA[
+        <p>L’idée de départ pour ce blog était de partager mon expérience pour administrer un serveur dédié, donc commençons par là.</p>
+
+<p>J’ai depuis de nombreuses années maintenant une <a href="http://www.online.net/fr">dédibox</a> pour héberger mes sites internet que je change régulièrement pour profiter des nouvelles offres, des nouveaux prix, d’un nouveau datacenter, …</p>
+
+<p>Ça faisait 2 ans (2011-2013) que j’avais une <a href="http://documentation.online.net/fr/serveur-dedie/offres/serveur-dedibox-pro-dell/start">DEDIBOX PRO DELL</a> et j’ai décidé il y a quelques mois de me relancer dans une migration pour profiter de plusieurs points :</p>
+
+<ul>
+<li>Le nouveau datacenter d’Online : DC2 vers <a href="http://www.iliad-datacenter.fr/datacenters/dc3">DC3</a> (avec un réseau plus performant)</li>
+<li>Du matériel neuf</li>
+<li>Performance équivalente car derrière l’offre c’est un serveur Dell R210</li>
+<li>Et réinstaller mon système pour passer d’une Debian 6 vers un Debian 7</li>
+</ul>
+
+<p>J’ai donc pris la <a href="http://www.online.net/fr/serveur-dedie/dedibox-lt2k14">DEDIBOX LT 2014</a> ce qui me fait passer de 50 à 36 euros/mois soit une économie non négligeable de 168 euros par an 🙂</p>
+
+<p>Je perd uniquement 1To dans l’histoire mais comme en 2 ans j’avais pas réussir à remplir le disque c’est pas très grave.</p>
+
+<p>L’objectif de cette série d’articles sera de vous expliquer comment administrer un serveur dédié et mes choix :</p>
+
+<ul>
+<li>Un socle sous <a href="http://www.debian.org/index.fr.html">Debian 7</a> avec des machines virtuelles <a href="https://wiki.debian.org/LXC">LXC</a></li>
+<li>Des histoires de réseaux pour avoir des IP publique avec les IP Failover d’Online</li>
+<li>Pas de FTP mais du SFTP car c’est quand même mieux à notre époque</li>
+<li>Un serveur Web avec Apache, son copain PHP et son ami MySQL</li>
+<li>Installer un cloud avec <a href="http://owncloud.org/">Owncloud</a> pour stocker des fichiers en HTTPS</li>
+<li>….</li>
+</ul>
+
+<p>A bientôt donc pour le début du déploiement …</p>
+    ]]></content>
+</entry>
+    </feed>

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="description" content="">
+
+        <meta property="og:title" content="Php Sécurité – Découverte de la faille XSS et comment s&#039;en protéger | Blog de Vincent Dauce"/>
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content="https://vincent.dauce.fr/blog/2014-03-08-php-securite-faille-xss"/>
+        <meta property="og:description" content="" />
+
+        <title>Php Sécurité – Découverte de la faille XSS et comment s&#039;en protéger | Blog de Vincent Dauce</title>
+
+        <link rel="home" href="https://vincent.dauce.fr">
+        <link rel="icon" href="/favicon.ico">
+        <link href="/blog/feed.atom" type="application/atom+xml" rel="alternate" title="Blog de Vincent Dauce Atom Feed">
+
+                    <!-- Fathom - beautiful, simple website analytics -->
+            <script src="https://cdn.usefathom.com/script.js" data-site="VSUJDIGQ" defer></script>
+            <!-- / Fathom -->
+        
+        <link href="https://fonts.googleapis.com/css?family=Nunito+Sans:300,300i,400,400i,700,700i,800,800i" rel="stylesheet">
+        <link rel="stylesheet" href="/assets/build/css/main.css?id=3717bee9ccac7506b103bbe24c27e2de">
+    </head>
+
+    <body class="flex flex-col justify-between min-h-screen bg-gray-100 text-gray-800 leading-normal font-sans">
+        <header class="flex items-center shadow bg-white border-b h-24 py-4" role="banner">
+            <div class="container flex items-center max-w-8xl mx-auto px-4 lg:px-8">
+                <div class="flex items-center">
+                    <a href="/" title="Blog de Vincent Dauce home" class="inline-flex items-center">
+                        <img class="h-8 md:h-10 mr-3" src="/assets/img/logo.svg" alt="Blog de Vincent Dauce logo" />
+
+                        <h1 class="text-lg md:text-2xl text-blue-800 font-semibold hover:text-blue-600 my-0">Blog de Vincent Dauce</h1>
+                    </a>
+                </div>
+
+                <div id="vue-search" class="flex flex-1 justify-end items-center">
+                    <search></search>
+
+                    <nav class="hidden lg:flex items-center justify-end text-lg">
+    <a title="Blog de Vincent Dauce Blog" href="/blog"
+        class="ml-6 text-gray-700 hover:text-blue-600 ">
+        Blog
+    </a>
+
+    <a title="Blog de Vincent Dauce About" href="/about"
+        class="ml-6 text-gray-700 hover:text-blue-600 ">
+        About
+    </a>
+
+    <a title="Blog de Vincent Dauce Contact" href="/contact"
+        class="ml-6 text-gray-700 hover:text-blue-600 ">
+        Contact
+    </a>
+</nav>
+
+                    <button class="flex justify-center items-center bg-blue-500 border border-blue-500 h-10 px-5 rounded-full lg:hidden focus:outline-none"
+    onclick="navMenu.toggle()"
+>
+    <svg id="js-nav-menu-show" xmlns="http://www.w3.org/2000/svg"
+        class="fill-current text-white h-9 w-4" viewBox="0 0 32 32"
+    >
+        <path d="M4,10h24c1.104,0,2-0.896,2-2s-0.896-2-2-2H4C2.896,6,2,6.896,2,8S2.896,10,4,10z M28,14H4c-1.104,0-2,0.896-2,2  s0.896,2,2,2h24c1.104,0,2-0.896,2-2S29.104,14,28,14z M28,22H4c-1.104,0-2,0.896-2,2s0.896,2,2,2h24c1.104,0,2-0.896,2-2  S29.104,22,28,22z"/>
+    </svg>
+
+    <svg id="js-nav-menu-hide" xmlns="http://www.w3.org/2000/svg"
+        class="hidden fill-current text-white h-9 w-4" viewBox="0 0 36 30"
+    >
+        <polygon points="32.8,4.4 28.6,0.2 18,10.8 7.4,0.2 3.2,4.4 13.8,15 3.2,25.6 7.4,29.8 18,19.2 28.6,29.8 32.8,25.6 22.2,15 "/>
+    </svg>
+</button>
+
+                </div>
+            </div>
+        </header>
+
+        <nav id="js-nav-menu" class="w-auto px-2 pt-6 pb-2 bg-gray-200 shadow hidden lg:hidden">
+    <ul class="my-0">
+        <li class="pl-4">
+            <a
+                title="Blog de Vincent Dauce Blog"
+                href="/blog"
+                class="block mt-0 mb-4 text-sm no-underline text-gray-800 hover:text-blue-500"
+            >Blog</a>
+        </li>
+        <li class="pl-4">
+            <a
+                title="Blog de Vincent Dauce About"
+                href="/about"
+                class="block mt-0 mb-4 text-sm no-underline text-gray-800 hover:text-blue-500"
+            >About</a>
+        </li>
+        <li class="pl-4">
+            <a
+                title="Blog de Vincent Dauce Contact"
+                href="/contact"
+                class="block mt-0 mb-4 text-sm no-underline text-gray-800 hover:text-blue-500"
+            >Contact</a>
+        </li>
+    </ul>
+</nav>
+
+        <main role="main" class="flex-auto w-full container max-w-4xl mx-auto py-16 px-6">
+                
+    <h1 class="leading-none mb-2">Php Sécurité – Découverte de la faille XSS et comment s&#039;en protéger</h1>
+
+    <p class="text-gray-700 text-xl md:mt-0">Vincent Dauce  •  March 8, 2014</p>
+
+                        <a
+                href="/blog/categories/php"
+                title="View posts in php"
+                class="inline-block bg-gray-300 hover:bg-blue-200 leading-loose tracking-wide text-gray-800 uppercase text-xs font-semibold rounded mr-4 px-3 pt-px"
+            >php</a>
+            
+    <div class="border-b border-blue-200 mb-10 pb-4" v-pre>
+        <p>Nous allons étudier dans cet article la faille <a href="http://fr.wikipedia.org/wiki/Cross-site_scripting">Cross-Site Scripting</a> (XSS) et apprendre à s’en protéger.</p>
+
+<h2>Introduction</h2>
+
+<p>Cette faille est la plus importante <a href="http://vincent.dauce.fr/php-securite-injection-sql/" title="Php Sécurité – Découverte des Injections SQL et comment s’en protéger">après les injections SQL que nous avons déjà étudié</a>. Donc il est nécessaire de la connaitre pour s’en protéger.</p>
+
+<p>Le principe de cette faille est d’injecter des données spécifiques sur un site web. Celui-ci va l’afficher sans en contrôler la nature et provoquer une importante faille à tous les visiteurs qui l’afficherons.</p>
+
+<h2>———————————————————————————</h2>
+
+<p>07/06/2014 : Ajout du lien vers le XSS Game à la fin</p>
+
+<h2>———————————————————————————</h2>
+
+<h2>Découverte de la faille</h2>
+
+<h3>Exemple 1 : Avec du code HTML (XSS stocké ou permanent)</h3>
+
+<p>Sur la page d’inscription je saisi mon login avec du code HTML :</p>
+
+<pre><code class="language-bash">&lt;strong&gt;eXorus&lt;/strong&gt;
+</code></pre>
+
+<p>La faille va se voir quand je vais me connecter car le site non protégé affiche mon login sans le traiter donc je vais voir mon login en gras : <strong>eXorus</strong></p>
+
+<p>Et les autres utilisateurs le verront aussi par exemple sur le forum ou l’on affiche le nom de l’auteur d’un post, toujours en gras.</p>
+
+<p>Dans ce cas c’est pas très méchant et ca peut même être jolie si on décide de mettre du code HTML avec du CSS pour avoir de la couleur, …</p>
+
+<h3>Exemple 2 : Avec du code Javascript (XSS réfléchi ou non permanent)</h3>
+
+<p>Imaginons un forum avec des posts sur plusieurs pages, quand je clique sur page suivante j’ai des URL de type :</p>
+
+<p>http://www.monforum.fr/informatique?p=1</p>
+
+<p>http://www.monforum.fr/informatique?p=2</p>
+
+<p>http://www.monforum.fr/informatique?p=3</p>
+
+<p>Sur chaque page on m’indique que je suis sur la page 1 ou 2 ou 3 … mais cette donnée n’est pas protégée donc si je change moi même la valeur de la variable p dans l’URL la faille va se voir. Par exemple :</p>
+
+<pre><code class="language-bash">http://www.monforum.fr/informatique?p=&lt;script type="text/javascript"&gt;alert('Faille');&lt;/script&gt;
+</code></pre>
+
+<p>Quand je vais aller sur cette URL comme on affiche la variable p sans la protéger je vais avoir une popup Javascript qui va m’afficher « Faille ». Encore une fois on est pas très méchant et en plus l’attaquant va s’attaquer lui même car personne n’ira jamais sur cette URL … quoi que ça arrive des fois 🙂 c’est pour ca qu’il faut éviter de suivre les URL qu’on nous donne sans y réfléchir.</p>
+
+<p>Conclusion</p>
+
+<p>Dans les 2 exemples ci-dessous nous avons été très gentil mais nous pouvons faire beaucoup plus de dégats par exemple au lieu simplement d’afficher un texte avec une couleur ou d’afficher une popup Javascript on peut rediriger le visiteur vers un site pirate qui imitera la site attaqué avec le même design. Donc le visiteur ne verra pas qu’il a changé de site et ensuite tout peut arriver.</p>
+
+<p>Reprenons l’exemple 1 en plus méchant :</p>
+
+<ol>
+<li>Je m’inscris sur un forum http://forum.fr avec le login :</li>
+</ol>
+
+<pre><code class="language-bash">&lt;script type=”text/javascript”&gt;window.location.href=”http://forumpirate.fr/login";&lt;/script&gt;
+</code></pre>
+
+<ol>
+<li>Je vais écrire un premier post sur le forum intéressant pour toucher le plus de personnes possibles</li>
+<li>Toutes les personnes qui vont voir mon post vont voir mon login et donc le Javascript va s’exécuter pour les rediriger vers la page http://forumpirate.fr/login</li>
+<li>Sur ce nouveau forum pirate que j’ai créé moi même j’ai reproduit à l’identique le site initial http://forum.fr</li>
+<li>Donc le visiteur ne va pas comprendre pourquoi il est déconnecté tout d’un coup en voulant lire un post intéressant mais il va pas chercher plus loin et il va saisir son login et mot de passe sur le forum pirate</li>
+<li>Sur mon forum pirate le login et le mot de passe seront récupérés pour être sauvegardé dans ma base en clair pour pouvoir les lire et les utiliser contre eux</li>
+</ol>
+
+<p>Dans le même genre mais au lieu de rediriger vers un site pirate on redirigerais sur une autre page du forum qui serait accessible uniquement aux administrateurs du forum comme une page pour supprimer un post.</p>
+
+<p>L’URL pour supprimer un post est http://forum.fr/post-delete.php?id=66</p>
+
+<p>Mais cette URL n’est autorisé que pour les comptes administrateurs donc si je suis un pirate et que je veux supprimer le post 66 il suffit de m’inscrire sur le forum avec le login :</p>
+
+<pre><code class="language-bash">&lt;script type=”text/javascript”&gt;window.location.href=”http://forum.fr/post-delete.php?id=66";&lt;/script&gt;
+</code></pre>
+
+<p>Ecrire un nouveau post dans le forum et espérer qu’un administrateur passe. Pour les utilisateurs normaux ils seront redirigés vers l’URL mais comme ils n’ont pas les droits ça mettra un message d’erreur mais pour l’administrateur ça supprimera le post.</p>
+
+<h2>Protection</h2>
+
+<p>La protection est simple : <strong>Never Trust User Input (Ne jamais faire confiance aux données des utilisateurs)</strong></p>
+
+<ul>
+<li>Le risque de cette faille est uniquement lors de l’affichage donc il faut nettoyer la donnée à afficher avant de l’afficher.</li>
+<li>Nettoyer la donnée une seule fois</li>
+<li>Valider les données lors de la récupération :
+
+<ul>
+<li>Limiter les caractères autorisés pour un login (alphanumérique)</li>
+<li>Contrôler la forme d’une adresse mail (xxx@xxx.xxx)</li>
+<li>Limiter le nombre de caractères un prénom de 200 caractères est ce que ça existe ?</li>
+<li>Un chiffre est un chiffre donc ne pas permettre de mettre des lettres</li>
+<li>…</li>
+</ul></li>
+</ul>
+
+<pre><code class="language-php">$userInput = '&lt;strong&gt;eXorus&lt;/strong&gt;';
+
+// [Faille XSS] Affiche eXorus en gras
+echo $userInput;
+
+// [XSS Sécurisé] Affiche &lt;strong&gt;eXorus&lt;/strong&gt;
+echo htmlspecialchars($userInput, ENT_QUOTES);
+</code></pre>
+
+<p>L’unique méthode magique à utiliser en PHP pour se protéger des failles XSS est <a href="http://www.php.net/manual/fr/function.htmlspecialchars.php">htmlspecialchars()</a> avec le paramètre ENT_QUOTES qui convertit les guillemets simples en plus.</p>
+
+<h2>Comment ça fonctionne ?</h2>
+
+<p>Si tu affiches du code HTML, CSS ou Javascript il sera interprété par le navigateur du visiteur. Pour éviter cela on affiche les caractères qui ont des significations spéciales en HTML/CSS et Javascript sous forme d’entités HTML.</p>
+
+<p>Pour le code ci-dessous dans le navigateur nous allons voir :</p>
+
+<p><strong>eXorus</strong></p>
+
+<p>&lt;strong&gt;eXorus&lt;/strong&gt;</p>
+
+<p>et dans le code source nous allons voir :</p>
+
+<p>&lt;strong&gt;eXorus&lt;/strong&gt;</p>
+
+<p>&amp;lt;strong&amp;gt;eXorus&amp;lt;/strong&amp;gt;</p>
+
+<p>De cette manière le code HTML/CSS et Javascript s’affiche proprement dans le navigateur sans être interprété (ce que nous recherchons).</p>
+
+<p>Et merci à l’auteur ci-dessous qui m’a donné envie d’écrire sur cette faille :</p>
+
+<p>Source (English) : <a href="http://www.sunnytuts.com/article/preventing-cross-site-scripting-xss">http://www.sunnytuts.com/article/preventing-cross-site-scripting-xss</a></p>
+
+<p>Pour finir je vous laisse vous entrainer sur un XSS Game : <a href="https://xss-game.appspot.com/">https://xss-game.appspot.com/</a></p>
+    </div>
+
+    <nav class="flex justify-between text-sm md:text-base">
+        <div>
+                            <a href="https://vincent.dauce.fr/blog/2014-03-08-vpmel-mon-premier-projet-open-source" title="Older Post: Mon premier projet Open Source php-mime-mail-parser">
+                    &LeftArrow; Mon premier projet Open Source php-mime-mail-parser
+                </a>
+                    </div>
+
+        <div>
+                            <a href="https://vincent.dauce.fr/blog/2014-04-03-administrer-un-serveur-dedie-part-7-backup-mysql" title="Newer Post: Administrer un serveur dédié - part 7 : Backup MySQL">
+                    Administrer un serveur dédié - part 7 : Backup MySQL &RightArrow;
+                </a>
+                    </div>
+    </nav>
+        </main>
+
+        <footer class="bg-white text-center text-sm mt-12 py-4" role="contentinfo">
+            <ul class="flex flex-col md:flex-row justify-center list-none">
+                <li class="md:mr-2">
+                    &copy; <a href="https://tighten.co" title="Tighten website">Tighten</a> 2025.
+                </li>
+
+                <li>
+                    Built with <a href="http://jigsaw.tighten.co" title="Jigsaw by Tighten">Jigsaw</a>
+                    and <a href="https://tailwindcss.com" title="Tailwind CSS, a utility-first CSS framework">Tailwind CSS</a>.
+                </li>
+            </ul>
+        </footer>
+
+        <script src="/assets/build/js/main.js?id=ab5beb18484060678105469b256b9364"></script>
+
+        <script>
+    const navMenu = {
+        toggle() {
+            const menu = document.getElementById('js-nav-menu');
+            menu.classList.toggle('hidden');
+            menu.classList.toggle('lg:block');
+            document.getElementById('js-nav-menu-hide').classList.toggle('hidden');
+            document.getElementById('js-nav-menu-show').classList.toggle('hidden');
+        },
+    }
+</script>
+    </body>
+</html>
